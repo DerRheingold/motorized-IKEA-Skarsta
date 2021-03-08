@@ -7,7 +7,7 @@
   
   DESCRIPTION 
     This code waits for a button to be pressed (UP or DOWN), and accordingly powers the motors in the desired direction and speed.
-    One motor will turn clockwise, the other counterclockwise. The motors are inteded to be placed facing each other, to duplicate the torque on the allen wrench
+    One motor will turn clockwise, the other counterclockwise. The motors are intended to be placed facing each other, to duplicate the torque on the allen wrench
     On my particular setup (a heavy desktop with 2 monitors) I use 100% of the power speed and torque when raising the desk,
     however, when lowering the desk I need a bit less since gravity helps, to keep the speed up and down at a similar rate, this is configurable.
     You may want to tweak the variables PWM_SPEED_UP and PWM_SPEED_DOWN to adjust it to your desktop load, the allowed values
@@ -21,7 +21,7 @@
     Use program mode to record the time it takes your motors to raise and lower the desk. once recorded, you can use the auto-raise and auto-lower functions,
     this is an optional functionality, it's ok if you decide simply not to use it
     - To enter Program Mode, press and hold BUTTON_UP and BUTTON_DOWN for 3 seconds
-    - The LED on pin 9 will continously blink rapidly, indicating that the system is in program mode waiting for the user to start recording (raise or lower)
+    - The LED on pin 9 will continuously blink rapidly, indicating that the system is in program mode waiting for the user to start recording (raise or lower)
     - While in program mode, Press and Hold BUTTON_UP to raise the desk and RECORD the time it takes to raise it, this value will be used on auto-raise later
     - While in program mode, Press and Hold BUTTON_DOWN to lower the desk and RECORD the time it takes to lower it, this value will be used on auto-lower later
     - After the button is released, the LED will perform a "BLINK_THINKING" followed by a "BLINK_SUCCESS" (see below) to indicate the program was recorded to EEPROM correctly,
@@ -39,7 +39,7 @@
       without the time to raise programmed it will simply stop raising and perform a BLINK_ERROR routine. Completely unharmful, you can continue to use the manual up/down buttons
     - To activate auto-raise (using BUTTON_UP only)
       - Press the button Twice in less than a second then immediately Press & Hold for 2 seconds (i.e. Press, Press, Press+Hold)
-      - If the sequence was done correctly, the LED will blink continously (AFTER the 2 seconds of holding) and you can then release the button, 
+      - If the sequence was done correctly, the LED will blink continuously (AFTER the 2 seconds of holding) and you can then release the button, 
         it will continue raising the desk automatically and then stop when the recorded time has elapsed. The 2 seconds that it takes to activate program mode are substracted from
         the recorded time to keep the total raise time correct (approximately, of course).
       - Please note, the moment you hold the button (after the 2 presses) the desk will begin to raise, you must keep holding it while it raises for 2 seconds for the program
@@ -64,10 +64,9 @@
 #include <Ultrasonic.h>
 
 
-
 /* TO DO
 - Sometimes loses value for Position 1 in EEPROM :(
-- 
+- Catch loss of sonar signal during automatic table movement
 */
 
 #define BUTTON_UP 2   //ATM-5
@@ -85,9 +84,8 @@
 #define DIO 15 // 7 Segment
 #define ECHO_PIN     16  // Arduino pin tied to echo pin on the ultrasonic sensor.
 #define TRIGGER_PIN  17  // Arduino pin tied to trigger pin on the ultrasonic sensor.
-#define MAX_DISTANCE 200 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
 
-//NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
+//NewPing doesn't work reliably with an external power supply, so switched to "Ultrasonic" library.
 Ultrasonic ultrasonic(TRIGGER_PIN, ECHO_PIN);
 TM1637Display display(CLK, DIO);
 
@@ -124,7 +122,7 @@ bool BUTTON_UP_STATE = LOW;
 bool BUTTON_DOWN_STATE = LOW;
 bool BUTTON_POS_0_STATE = LOW;
 bool BUTTON_POS_1_STATE = LOW;
-long BUTTON_WAIT_TIME = 500; //the small delay before starting to go up/down for smoothness on any button
+long BUTTON_WAIT_TIME = 250; //the small delay before starting to go up/down for smoothness on any button
 
 //Program Mode SET/ACTIVATE variables
 //The following three properties can be understood as follows: a user needs to do [PRG_ACTIVATE_PRECLICKS] clicks in less than [PRG_ACTIVATE_PRECLICK_THRESHOLD] ms, and then
@@ -225,7 +223,73 @@ void setup() {
   pinMode(in4, OUTPUT);
   readFromEEPROM();
   validateEEPROM();
-  int current_height = ultrasonic.read();
+  current_height = ultrasonic.read();
+  int digitPosition = 0;
+  display.setBrightness(1);
+  display.clear();
+  //Some start-up-animation on Display
+  while (digitPosition <  4 ){  
+    delay (100);
+    display.setSegments (smallO,1,digitPosition);
+    digitPosition++;
+    if (digitPosition >= 4){
+      digitPosition=0;
+      break;
+    }
+  };
+  while (digitPosition < 4){
+    delay (100);
+    display.setSegments (circle,1,digitPosition);
+    digitPosition++;
+    if (digitPosition >= 4){
+      digitPosition=0;
+      break;
+    }
+  };
+  while (digitPosition < 4){
+    delay (100);
+    display.setSegments (Zero,1,digitPosition);
+    digitPosition++;
+    if (digitPosition >= 4){
+      digitPosition=0;
+      break;
+    }
+  };
+  while (digitPosition < 4){
+    delay (100);
+    display.setSegments (empty,1,digitPosition);
+    digitPosition++;
+    if (digitPosition >= 4){
+      digitPosition=0;
+      break;
+    }
+  };
+  display.clear();
+  delay (400);
+  // Display the saved Position 0 height on the display upon startup
+  display.setSegments (P,1,0);  
+  display.setSegments (empty,1,1);
+  display.setSegments (Zero,1,2);
+  display.setSegments (empty,1,3);
+  delay (1000);
+  display.showNumberDec(pos0_height, false);
+  delay (1500);
+  display.clear();
+  delay (400);
+  // Display the saved Position 1 height on the display upon startup
+  display.setSegments (P,1,0); 
+  display.setSegments (empty,1,1);
+  display.setSegments (One,1,2);
+  display.setSegments (empty,1,3);
+  delay (1000);
+  display.showNumberDec(pos1_height, false);
+  delay (1500);
+  display.clear();
+  delay (400);
+  // Display the current height on the display upon startup
+  checkHeight(); 
+  delay (1500);  
+  display.clear();
 }
 
 void loop() {
@@ -241,25 +305,27 @@ void loop() {
   handleButtonUp();
   handleButtonDown();
 
-  //Handle press and hold of buttons to trigger a saved position or save a current position
+  //Handle press and hold of buttons to trigger a saved position or save the current position
   position_0();
   position_1();
 }
 
 /***********************************************
   Pressing the Button for Position 0 (sitting)
+  Upon a short press, the table will drive into the lower (sitting) position
+  When long-pressed there is a small animation in the display and afterwards (upon release of the button) the current height is saved to eeprom and shown in the display
 ***********************************************/
 void position_0 (){
    bool btnUpState = digitalRead(BUTTON_UP);
    bool btnDownState = digitalRead(BUTTON_DOWN);
    bool btnPos0State = digitalRead(BUTTON_POS_0);
    current_height = ultrasonic.read();
-   if (!BUTTON_POS_0_STATE && debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){
+   if (!BUTTON_POS_0_STATE && debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){  //define what to do when the button is pressed 
        BUTTON_POS_0_STATE=HIGH;
        Serial.println("POS 0 pressed");
        pressedTime = millis(); 
        int digitPosition = 0;
-       while (btnPos0State && debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){  //small animation on Display while button is held down
+       while (btnPos0State && debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){  //small animation on Display while button is held down longer than 500 ms
          delay (500);
          display.setSegments (smallO,1,digitPosition);
          digitPosition++;
@@ -273,7 +339,7 @@ void position_0 (){
          }
        }
    }
-   else if (BUTTON_POS_0_STATE && !debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){
+   else if (BUTTON_POS_0_STATE && !debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){ //releasing the button checks how long it was pressed and then decides what to do
        BUTTON_POS_0_STATE=LOW;
        releasedTime = millis();   
        TimePressed = releasedTime-pressedTime;
@@ -313,7 +379,7 @@ void position_0 (){
         
         delay (100);
         int desired_height = pos0_height;
-        //if (current_height == 0){ //Catch Sonar-Error before starting programm
+        //if (current_height == 0){ //Catch Sonar-Error before starting program
           //Serial.println("Down Er 1");
         //};
         while (current_height > desired_height){
@@ -321,7 +387,7 @@ void position_0 (){
           Serial.print ("current: "); Serial.println(current_height);
           Serial.print ("desired: "); Serial.println(desired_height);
           goDown();
-          if (current_height <= desired_height){
+          if (current_height <= desired_height){ //stop automatically if the desired height is reached
             stopMoving();
             Serial.println("Desk too low");
             display.setSegments (P,1,0);
@@ -333,10 +399,11 @@ void position_0 (){
             break;
           }
           else if (current_height == 0){  //Catch Sonar-Error while table is moving
+            Serial.println("Sonar Error in automated program");
             checkHeight();
             break;
           }
-          if(!btnUpState && debounceRead(BUTTON_UP, btnUpState)){    //Cancel if any button is pressed during autoRaise
+          if(!btnUpState && debounceRead(BUTTON_UP, btnUpState)){    //Cancel if up- or down-button is pressed during automatic procedure
             stopMoving();
             Serial.println("Program Cancelled by user, BUTTON UP");
             int digitPosition = 0;
@@ -383,13 +450,15 @@ void position_0 (){
 
 /**********************************************
   Pressing the Button for Position 1 (standing)
+  Upon a short press, the table will drive into the higher (standing) position
+  When long-pressed there is a small animation in the display and afterwards (upon release of the button) the current height is saved to eeprom and shown in the display
 ***********************************************/
 void position_1 (){
    bool btnUpState = digitalRead(BUTTON_UP);
    bool btnDownState = digitalRead(BUTTON_DOWN);
    bool btnPos1State = digitalRead(BUTTON_POS_1);
    current_height = ultrasonic.read();
-    if (!BUTTON_POS_1_STATE && debounceRead(BUTTON_POS_1, BUTTON_POS_1_STATE)){
+    if (!BUTTON_POS_1_STATE && debounceRead(BUTTON_POS_1, BUTTON_POS_1_STATE)){ //define what to do when the button is pressed 
        BUTTON_POS_1_STATE=HIGH;
        pressedTime = millis(); 
        int digitPosition = 0;
@@ -407,7 +476,7 @@ void position_1 (){
          }
        }
    }
-   else if (BUTTON_POS_1_STATE && !debounceRead(BUTTON_POS_1, BUTTON_POS_1_STATE)){
+   else if (BUTTON_POS_1_STATE && !debounceRead(BUTTON_POS_1, BUTTON_POS_1_STATE)){ //releasing the button checks how long it was pressed and then decides what to do
        BUTTON_POS_1_STATE=LOW;
        releasedTime = millis();   
        TimePressed = releasedTime-pressedTime;
@@ -442,7 +511,6 @@ void position_1 (){
         display.setSegments (empty,1,1);
         display.setSegments (One,1,2);
         display.setSegments (empty,1,3);
-        //current_height = ultrasonic.read();
         delay (100);
         int desired_height = pos1_height;
         while (current_height < desired_height){
@@ -450,7 +518,7 @@ void position_1 (){
           Serial.print ("current: "); Serial.println(current_height);
           Serial.print ("desired: "); Serial.println(desired_height);
           goUp();
-          if (current_height >= desired_height){
+          if (current_height >= desired_height){ //stop automatically if the desired height is reached
             stopMoving();
             Serial.println("too high");
             display.setSegments (P,1,0);
@@ -462,11 +530,11 @@ void position_1 (){
             break;
           }
           else if (current_height == 0){  //Catch Sonar-Error while table is moving
-            Serial.println("Sonar Error");
+            Serial.println("Sonar Error in automated program");
             checkHeight();
             break;
           }
-          if(!btnUpState && debounceRead(BUTTON_UP, btnUpState)){    //Cancel if any button is pressed during autoRaise
+          if(!btnUpState && debounceRead(BUTTON_UP, btnUpState)){    //Cancel if up- or down-button is pressed during automatic procedure
             stopMoving();
             Serial.println("Program Cancelled by user, BUTTON UP");
             int digitPosition = 0;
@@ -514,11 +582,9 @@ void position_1 (){
 
 void checkHeight() {    // Get Sensor Reading and display on 7-Segment
   display.setBrightness(1);
-  //uint8_t data[] = { 0x0, 0x0, 0x0, 0x0 };
   current_height = ultrasonic.read();
   Serial.print("current height: "); Serial.println(current_height);
-  if (current_height != oldDistance) {  //avoid flickering of 7-Ssegment as it now only refreshes if the value has changed
-    //display.setSegments(data);
+  if (current_height != oldDistance) {  //avoid flickering of 7-segment as it now only refreshes if the value has changed
     display.showNumberDec(current_height, false);
     oldDistance = current_height;
   }
@@ -706,6 +772,7 @@ void handleButtonDown()
   LOWER / RAISE DESK FUNCTIONS
 ****************************************/
 // Tries to raise the desk automatically using the previously programmed values
+// This methode doesn't utilize the sonar sensor
 void autoRaiseDesk(long alreadyElapsed)
 {
   Serial.print("IsUpSet: ");
@@ -754,6 +821,7 @@ void autoRaiseDesk(long alreadyElapsed)
 }
 
 // Tries to lower the desk automatically using the previously programmed values
+// This methode doesn't utilize the sonar sensor
 void autoLowerDesk(long alreadyElapsed)
 {
   Serial.print("IsDownSet: ");
@@ -884,69 +952,6 @@ void readFromEEPROM()
   Serial.print(savedProgram.isUpSet);
   Serial.print(" | IsDownSet: ");
   Serial.println(savedProgram.isDownSet);
-  int digitPosition = 0;
-  display.setBrightness(1);
-  display.clear();
-  while (digitPosition <  4 ){  //Some start-up-animation on Display
-    delay (100);
-    display.setSegments (smallO,1,digitPosition);
-    digitPosition++;
-    if (digitPosition >= 4){
-      digitPosition=0;
-      break;
-    }
-  };
-  while (digitPosition < 4){
-    delay (100);
-    display.setSegments (circle,1,digitPosition);
-    digitPosition++;
-    if (digitPosition >= 4){
-      digitPosition=0;
-      break;
-    }
-  };
-  while (digitPosition < 4){
-    delay (100);
-    display.setSegments (Zero,1,digitPosition);
-    digitPosition++;
-    if (digitPosition >= 4){
-      digitPosition=0;
-      break;
-    }
-  };
-  while (digitPosition < 4){
-    delay (100);
-    display.setSegments (empty,1,digitPosition);
-    digitPosition++;
-    if (digitPosition >= 4){
-      digitPosition=0;
-      break;
-    }
-  };
-  display.clear();
-  delay (400);
-  display.setSegments (P,1,0);  // Display the saved Position 0 height on the display upon startup
-  display.setSegments (empty,1,1);
-  display.setSegments (Zero,1,2);
-  display.setSegments (empty,1,3);
-  delay (1000);
-  display.showNumberDec(pos0_height, false);
-  delay (1500);
-  display.clear();
-  delay (400);
-  display.setSegments (P,1,0); // Display the saved Position 1 height on the display upon startup
-  display.setSegments (empty,1,1);
-  display.setSegments (One,1,2);
-  display.setSegments (empty,1,3);
-  delay (1000);
-  display.showNumberDec(pos1_height, false);
-  delay (1500);
-  display.clear();
-  delay (400);
-  checkHeight(); // Display the current height on the display upon startup
-  delay (1500);
-  
-  display.clear();
 }
 
 void validateEEPROM(){
