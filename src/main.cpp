@@ -189,7 +189,7 @@ uint8_t smallO [] = {
 uint8_t circle [] = {
   SEG_A | SEG_B | SEG_F | SEG_G  // ° 
 };
-uint8_t empty[] = {0x0}; //blank segement for 7-Segment display
+uint8_t empty[] = {0x0}; //blank segment for 7-Segment display
         
 
 //This function debounces the initial button reads to prevent flickering
