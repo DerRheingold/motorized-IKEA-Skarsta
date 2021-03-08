@@ -58,7 +58,6 @@
   URL:    https://github.com/cesar-moya/arduino-power-desktop
 */
 #include <EEPROM.h>
-#include <NewPing.h>
 #include <Arduino.h>
 #include <TM1637Display.h>
 #include <Ultrasonic.h>
@@ -76,7 +75,6 @@
 #define enA 6         //ATM-12
 #define in1 7         //ATM-13
 #define in2 8         //ATM-14
-
 #define enB 10        //ATM-16
 #define in3 11        //ATM-17
 #define in4 12        //ATM-18
