@@ -14,16 +14,18 @@ The basic idea behind this was relatively simple: After the crank of my desk bro
 * [2 x 24v DC Motors (23kg.cm torque) - 41,65€/piece](https://www.exp-tech.de/motoren/dc-getriebemotoren/9878/50-1-metal-gearmotor-37dx70l-mm-24v-with-64-cpr-encoder-helical-pinion)
 * [2 x L-Bracket for Motor - 6,50€](https://www.exp-tech.de/motoren/zubehoer-fuer-motoren/4857/pololu-stamped-aluminum-l-bracket-pair-for-37d-mm-metal-gearmotors)
 * [24v 6A AC/DC Adapter - 17€](https://www.ebay.de/itm/Netzteil-Trafo-DC12-24V-2A-10A-Netzadapter-Driver-f-LED-Strip-Streifen-Notebook/224113909308?ssPageName=STRK%3AMEBIDX%3AIT&var=522903200218&_trksid=p2060353.m2749.l2649)
-* 4x Push Buttons
-* 4x 10k OHM Resistors
+* [Sonar sensor - HC-SR04 - 3€](https://www.ebay.de/sch/i.html?_from=R40&_nkw=HC-SR04&_sacat=0&rt=nc&LH_PrefLoc=1)
+* [TM1637 7-Segment-Display with 4 digits 0,56" - 3€](https://www.ebay.de/itm/TM1637-LED-4-Ziffern-7-Segment-Display-Uhr-Arduino-Raspberry/203030439344?hash=item2f458ea5b0:g:6NsAAOSwYDhdmjKQ)
 * [2 x Motor Shaft Coupling (6mm to 6 or 7mm) - 3€/piece](https://www.ebay.de/sch/i.html?_from=R40&_nkw=Wellenkupplung+6mm&_sacat=0&rt=nc&LH_PrefLoc=1)
+* 4x Push Buttons
+* 8x 8mm washers
+* 4x 10k OHM Resistors
 * Barrel Jack to Cable adapter
-* Junction Box (replaceable)
+* Junction Box
 * Solderless Breadboard
 * a hand full of jumper wires (Male-Female, as well as Male-Male)
 * a friend with a 3D printer 😉
 * some time to do metal working on the original drive shaft
-* 8x 8mm washers
 
 Total cost ~140€ +- depending on what small parts you have at home anyway.
 Links to the shops are no ads, just to the parts I ordered and made some good experience with.
