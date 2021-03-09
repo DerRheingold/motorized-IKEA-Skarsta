@@ -63,7 +63,7 @@
 #include <Ultrasonic.h>
 
 /* TO DO
-- Sometimes loses value for Position 1 in EEPROM :(
+- delete PRG_ACTIVATE_PRECLICKS etc
 - Catch loss of sonar signal during automatic table movement
 */
 
@@ -82,14 +82,11 @@
 #define ECHO_PIN     16  // Arduino pin tied to echo pin on the ultrasonic sensor.
 #define TRIGGER_PIN  17  // Arduino pin tied to trigger pin on the ultrasonic sensor.
 
-//NewPing doesn't work reliably with an external power supply, so switched to "Ultrasonic" library.
 Ultrasonic ultrasonic(TRIGGER_PIN, ECHO_PIN);
 TM1637Display display(CLK, DIO);
 
 // Definitions for Platformio
 void readFromEEPROM();
-void validateEEPROM();
-//void checkButtonClicksExpired();
 void handleButtonUp();
 void handleButtonDown();
 void position_0();
@@ -97,22 +94,13 @@ void position_1();
 void checkHeight();
 void goDown();
 void goUp();
-//void autoRaiseDesk(long alreadyElapsed);
 void stopMoving();
-//void autoLowerDesk(long alreadyElapsed);
-//void saveToEEPROM_TimeUp(long timeUp);
-//void saveToEEPROM_TimeDown(long timeDown);
-//bool handleProgramMode();
 
 //Struct to store the various necessary variables to persist the autoRaise/autoLower programs to EEPROM
 struct StoredProgram
 {
-  //bool isUpSet = false; //whether the UP program has been recorded
-  //bool isDownSet = false; // whether the DOWN program has been recorded
-  //float timeUp = 0; //time in milliseconds recorded to RAISE the desk
-  //float timeDown = 0; // time in milliseconds recorded to LOWER the desk
-  int pos0Height = 0;
-  int pos1Height = 0;
+  int pos0Height = 0; //height in cm above ground for the sitting position
+  int pos1Height = 0; //height in cm above ground for the standing position
 };
 
 StoredProgram savedProgram;
@@ -221,7 +209,6 @@ void setup() {
   pinMode(in3, OUTPUT);
   pinMode(in4, OUTPUT);
   readFromEEPROM();
-  validateEEPROM();
   current_height = ultrasonic.read();
   int digitPosition = 0;
   display.setBrightness(1);
@@ -292,17 +279,6 @@ void setup() {
 }
 
 void loop() {
-  /* Remove program mode
-  //If both buttons are pressed and held, check for entering program mode, 
-  //if this func returns true we want to skip anything else in the main loop
-  if (handleProgramMode()){  
-    return;
-  }
-  
-  //Check if the user didn't click at least twice(default config) in less than a second, reset counters if necessary
-  checkButtonClicksExpired();
-  */
-
   //Handle press and hold of buttons to raise/lower, and check if enter auto-raise and auto-lower
   handleButtonUp();
   handleButtonDown();
@@ -608,28 +584,6 @@ void checkHeight() {    // Get Sensor Reading and display on 7-Segment
 /****************************************
   MAIN CONTROL FUNCTIONS
 ****************************************/
-/* Remove program mode
-//If you didn't enter auto-raise or auto-lower by doing the magic combination (2 clicks in under a second + click and hold 2 secs)
-//then this function resets the clicks back to zero and the timer. handles both UP and DOWN buttons
-void checkButtonClicksExpired(){
-  //Check threshold for button UP
-  if (btnUpFirstClickTime > 0 && (millis() - btnUpFirstClickTime) >= PRG_ACTIVATE_PRECLICK_THRESHOLD)
-  {
-    Serial.println("BUTTON UP | PRECLICK_THRESHOLD expired, clicks = 0");
-    btnUpClicks = 0;
-    btnUpFirstClickTime = 0;
-  }
-
-  //Check threshold for button DOWN
-  if (btnDownFirstClickTime > 0 && (millis() - btnDownFirstClickTime) >= PRG_ACTIVATE_PRECLICK_THRESHOLD)
-  {
-    Serial.println("BUTTON DOWN | PRECLICK_THRESHOLD expired, clicks = 0");
-    btnDownClicks = 0;
-    btnDownFirstClickTime = 0;
-  }
-}
-*/
-
 //This function takes care of the events related to pressing BUTTON_UP, and only BUTTON_UP. It raises the desk when holding it, and if you do the 
 //magic combination (click, click, click+hold 2 secs) it will trigger auto-raise if recorded
 void handleButtonUp(){
@@ -780,107 +734,6 @@ void handleButtonDown()
 /****************************************
   LOWER / RAISE DESK FUNCTIONS
 ****************************************/
-/* Remove program mode
-// Tries to raise the desk automatically using the previously programmed values
-// This methode doesn't utilize the sonar sensor
-void autoRaiseDesk(long alreadyElapsed)
-{
-  Serial.print("IsUpSet: ");
-  Serial.println(savedProgram.isUpSet);
-  if (savedProgram.isUpSet)
-  {
-    //we subtract the amount of ms that already elapsed to enter auto-mode (about 2 seconds in default configs)
-    long timeToRaise = savedProgram.timeUp - alreadyElapsed;
-    Serial.print("AUTORAISE | PRG_TimeUp: "); Serial.print(savedProgram.timeUp);
-    Serial.print(" | TimeToRaise: "); Serial.println(timeToRaise);
-    long startTime = millis();
-    long elapsed = (millis() - startTime);
-    bool btnUpState = digitalRead(BUTTON_UP);
-    bool btnDownState = digitalRead(BUTTON_DOWN);
-
-    while(elapsed < timeToRaise){
-      goUp();
-
-      //Cancel if any button is pressed during autoRaise
-      if(!btnUpState && debounceRead(BUTTON_UP, btnUpState)){
-        Serial.println("Program Cancelled by user, BUTTON UP");
-        break;
-      }else if(btnUpState && !debounceRead(BUTTON_UP, btnUpState)){
-        btnUpState = LOW;
-      }
-
-      if (!btnDownState && debounceRead(BUTTON_DOWN, btnDownState)){
-        Serial.println("Program Cancelled by user, BUTTON DOWN");
-        break;
-      }
-      else if (btnDownState && !debounceRead(BUTTON_DOWN, btnDownState)){
-        btnDownState = LOW;
-      }
-
-      elapsed = (millis() - startTime);
-    }
-    stopMoving();
-    long stopTime = millis();
-    long totalElapsed = stopTime - startTime;
-    Serial.print("AUTORAISE | Auto-TotalElapsed:"); Serial.println(totalElapsed);
-  }
-  else
-  {
-    Serial.println("Error: Up Program not set");
-  }
-}
-
-// Tries to lower the desk automatically using the previously programmed values
-// This methode doesn't utilize the sonar sensor
-void autoLowerDesk(long alreadyElapsed)
-{
-  Serial.print("IsDownSet: ");
-  Serial.println(savedProgram.isDownSet);
-  if (savedProgram.isDownSet)
-  {
-    long timeToLower = savedProgram.timeDown - alreadyElapsed;
-    Serial.print("AUTOLOWER | PRG_TimeDown: "); Serial.print(savedProgram.timeDown);
-    Serial.print(" | TimeToLower: "); Serial.println(timeToLower);
-    long startTime = millis();
-    long elapsed = (millis() - startTime);
-    bool btnUpState = digitalRead(BUTTON_UP);
-    bool btnDownState = digitalRead(BUTTON_DOWN);
-    
-    while (elapsed < timeToLower)
-    {
-      goDown();
-
-      //Cancel if any button is pressed during auto-lower
-      if (!btnUpState && debounceRead(BUTTON_UP, btnUpState)){
-        Serial.println("Program Cancelled by user, BUTTON UP");
-        break;
-      }
-      else if (btnUpState && !debounceRead(BUTTON_UP, btnUpState)){
-        btnUpState = LOW;
-      }
-
-      if (!btnDownState && debounceRead(BUTTON_DOWN, btnDownState)){
-        Serial.println("Program Cancelled by user, BUTTON DOWN");
-        break;
-      }
-      else if (btnDownState && !debounceRead(BUTTON_DOWN, btnDownState)){
-        btnDownState = LOW;
-      }
-
-      elapsed = (millis() - startTime);
-    }
-    stopMoving();
-    long stopTime = millis();
-    long totalElapsed = stopTime - startTime;
-    Serial.print("AUTOLOWER | Auto-TotalElapsed:"); Serial.println(totalElapsed);
-  }
-  else
-  {
-    Serial.println("Warning: Can't lower desk on current conditions");
-  }
-}
-*/
-
 //Send PWM signal to L298N enX pin (sets motor speed)
 void goUp()
 {
@@ -926,67 +779,17 @@ void stopMoving()
 /****************************************
   EEPROM FUNCTIONS
 ****************************************/
-/* Remove program function
-//Saves the Time it took to raise the desk (timeUP) and sets the desk as Raised
-void saveToEEPROM_TimeUp(long timeUp)
-{
-  Serial.println("Saving UP to EEPROM");
-  savedProgram.timeUp = (float)timeUp;
-  savedProgram.isUpSet = true;
-  EEPROM.put(EEPROM_ADDRESS, savedProgram);
-}
-
-//Saves the Time it took to raise the desk (timeUP) and sets the desk as Lowered (!Raised)
-void saveToEEPROM_TimeDown(long timeDown)
-{
-  Serial.println("Saving DOWN to EEPROM");
-  savedProgram.timeDown = (float)timeDown;
-  savedProgram.isDownSet = true;
-  EEPROM.put(EEPROM_ADDRESS, savedProgram);
-}
-*/
-
 void readFromEEPROM()
 {
   Serial.println("Reading from EEPROM");
   EEPROM.get(EEPROM_ADDRESS, savedProgram);
-  /*
-  long timeUpInt = (long)savedProgram.timeUp;
-  Serial.print("TimeUp: ");
-  Serial.print(timeUpInt);
-  long timeDownInt = (long)savedProgram.timeDown;
-  Serial.print(" | TimeDown: ");
-  Serial.print(timeDownInt);
-  Serial.print(" | IsUPSet: ");
-  Serial.print(savedProgram.isUpSet);
-  Serial.print(" | IsDownSet: ");
-  Serial.print(savedProgram.isDownSet);
-  */
-  Serial.print("POS 0: ");
+  Serial.print("Position 0: ");
   Serial.print(savedProgram.pos0Height);
   pos0_height = savedProgram.pos0Height;
-  Serial.print(" | POS 1: ");
-  Serial.println(savedProgram.pos1Height);
+  Serial.print("cm | Position 1: ");
+  Serial.print(savedProgram.pos1Height);
+  Serial.print("cm");
   pos1_height = savedProgram.pos1Height;
-  /*Serial.print("Position 0 is: ");
-  Serial.print(pos0_height);
-  Serial.print("cm | Position 1 is: ");
-  Serial.print(pos1_height);
-  Serial.println("cm");
-  */
-}
-
-void validateEEPROM(){
-  /*
-  if(isnan(savedProgram.timeUp) || isnan(savedProgram.timeDown)){
-    Serial.println("Warning: timeUp/Down are NAN, Re-initializing");
-    savedProgram.timeUp = 0;
-    savedProgram.timeDown = 0;
-    savedProgram.isUpSet = false;
-    savedProgram.isDownSet = false;
-    EEPROM.put(EEPROM_ADDRESS, savedProgram);
-  }
-  */
 }
 
 void clearEEPROM(){
@@ -994,109 +797,3 @@ void clearEEPROM(){
     EEPROM.write(i, 0);
   }
 }
-
-/* Remove part to record time and programing mode
-//Checks if the user is requesting to enter program mode (by pressing and holding both buttons), if so, returns true, otherwise, false
-bool handleProgramMode(){
-  if (debounceRead(BUTTON_DOWN, LOW) && debounceRead(BUTTON_UP, LOW))
-  {
-    Serial.println("BOTH BUTTONS PRESSED");
-    if (holdButtonsStartTime == 0)
-      holdButtonsStartTime = millis();
-
-    //Enter program mode
-    if ((millis() - holdButtonsStartTime) >= PRG_SET_THRESHOLD)
-    {
-      Serial.println("PROGRAM MODE | Entered Program Mode");
-      //long enterTime = millis();
-      long recStart = 0;
-      bool recUp = false;
-      bool recDown = false;
-      bool btnUpPressed = digitalRead(BUTTON_UP);
-      bool btnDownPressed = digitalRead(BUTTON_DOWN);
-
-      while (true)
-      {
-        //long elapsed = (millis() - enterTime);
-        if (!recUp && !recDown)
-          
-        //HANDLE PROGRAM - RAISE
-        //when entering this loop. button UP WAS already pressed, we need to wait until it's released, then start recording
-        //if button wasn't pressed and now IS pressed, start recording
-        if(!recDown){
-          if (!btnUpPressed && debounceRead(BUTTON_UP, btnUpPressed))
-          {
-            btnUpPressed = true;
-            recUp = true;
-            recStart = millis();
-          } //if button was pressed and now is released
-          else if (btnUpPressed && !debounceRead(BUTTON_UP, btnUpPressed))
-          {
-            btnUpPressed = false;
-            if (recUp)
-            {
-              recUp = false;
-              stopMoving();
-              long timeUp = millis() - recStart;
-              saveToEEPROM_TimeUp(timeUp);
-              Serial.print("Recorded Program UP: ");
-              Serial.println(timeUp);
-              break;
-            }
-          }
-
-          if (recUp)
-          {
-            Serial.print("PROGRAM MODE | Recording | elapsed: ");
-            Serial.println(millis() - recStart);
-            goUp();
-          }
-        }
-        
-        //HANDLE PROGRAM - LOWER
-        //when entering this loop. button DOWN WAS already pressed, we need to wait until it's released, then start recording
-        //if button wasn't pressed and now IS pressed, start recording
-        if(!recUp){
-          if (!btnDownPressed && debounceRead(BUTTON_DOWN, btnDownPressed))
-          {
-            btnDownPressed = true;
-            recDown = true;
-            recStart = millis();
-          } //if button was pressed and now is released
-          else if (btnDownPressed && !debounceRead(BUTTON_DOWN, btnDownPressed))
-          {
-            btnDownPressed = false;
-            if (recDown)
-            {
-              recDown = false;
-              stopMoving();
-              long timeDown = millis() - recStart;
-              saveToEEPROM_TimeDown(timeDown);
-              Serial.print("Recorded Program DOWN: ");
-              Serial.println(timeDown);
-              break;
-            }
-          }
-
-          if (recDown)
-          {
-            Serial.print("PROGRAM MODE | Recording Down| elapsed: ");
-            Serial.println(millis() - recStart);
-            goDown();
-          }
-        }
-
-      } //end of while / program mode
-
-      Serial.println("PROGRAM MODE | Exited");
-    }
-
-    return true;
-  }
-  else
-  {
-    holdButtonsStartTime = 0;
-    return false;
-  }
-}
-*/
