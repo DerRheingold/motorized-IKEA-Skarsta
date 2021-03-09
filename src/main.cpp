@@ -112,6 +112,8 @@ struct StoredProgram
   bool isDownSet = false; // whether the DOWN program has been recorded
   float timeUp = 0; //time in milliseconds recorded to RAISE the desk
   float timeDown = 0; // time in milliseconds recorded to LOWER the desk
+  int pos0Height = 0;
+  int pos1Height = 0;
 };
 
 StoredProgram savedProgram;
@@ -159,8 +161,8 @@ const int LONG_PRESS_TIME  = 2000; // The time button "0" or "1" need to be pres
 // Required for the ultrasonic sensor
 int oldDistance;
 int current_height = ultrasonic.read(); // get initial reading upon start
-int pos0_height = EEPROM.read(0);
-int pos1_height = EEPROM.read(1);
+int pos0_height = 2;
+int pos1_height = 3;
 
 // Some digits/figures for the display
 const uint8_t P[] = {
@@ -354,7 +356,9 @@ void position_0 (){
           display.clear();
         }
         else { // Save height and give output to user
-          EEPROM.put(0, pos0SaveHeight);
+          savedProgram.pos0Height = pos0SaveHeight;
+          EEPROM.put(EEPROM_ADDRESS, savedProgram);
+          //EEPROM_ADDRESS +=sizeof (pos0SaveHeight);
           Serial.print("Saved Position 0: ");
           Serial.println(pos0SaveHeight);
           display.setSegments (P,1,0);
@@ -490,7 +494,9 @@ void position_1 (){
           display.clear();
         }
         else { // Save height and give output to user
-          EEPROM.put(1, pos1SaveHeight);
+          savedProgram.pos1Height = pos1SaveHeight;
+          EEPROM.put(EEPROM_ADDRESS, savedProgram);
+          //EEPROM_ADDRESS +=sizeof (pos1SaveHeight);
           Serial.print("Saved Position 1: ");
           Serial.println(pos1SaveHeight);
           display.setSegments (P,1,0);
@@ -934,11 +940,6 @@ void saveToEEPROM_TimeDown(long timeDown)
 void readFromEEPROM()
 {
   Serial.println("Reading from EEPROM");
-  Serial.print("Position 0 is: ");
-  Serial.print(pos0_height);
-  Serial.print("cm | Position 1 is: ");
-  Serial.print(pos1_height);
-  Serial.println("cm");
   EEPROM.get(EEPROM_ADDRESS, savedProgram);
   long timeUpInt = (long)savedProgram.timeUp;
   Serial.print("TimeUp: ");
@@ -950,6 +951,18 @@ void readFromEEPROM()
   Serial.print(savedProgram.isUpSet);
   Serial.print(" | IsDownSet: ");
   Serial.println(savedProgram.isDownSet);
+  Serial.print(" | POS 0: ");
+  Serial.println(savedProgram.pos0Height);
+  pos0_height = savedProgram.pos0Height;
+  Serial.print(" | POS 1: ");
+  Serial.println(savedProgram.pos1Height);
+  pos1_height = savedProgram.pos1Height;
+  Serial.print("Position 0 is: ");
+  Serial.print(pos0_height);
+  Serial.print("cm | Position 1 is: ");
+  Serial.print(pos1_height);
+  Serial.println("cm");
+  
 }
 
 void validateEEPROM(){
