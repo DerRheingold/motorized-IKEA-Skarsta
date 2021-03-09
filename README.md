@@ -47,4 +47,4 @@ Also the housing for the sonar sensor was printed. Yes we could have made some h
 
 ## Problems encountered and solved.
 * Voltage: First I tried with a 29V 2A power supply. This didn't provide enough "ompf" to let the motors drive the desk up. It only wen down 🙄 After upgrading to a 24V 6A power supply it worked fine. Though the L298N only outputs 18-19V to the motors the current is strong enough to power the motors. After all they are rated with 3A per motor :)
-* NewPing: Initially it worked fine and just as intended. However when I didn't provide USB-power anymore but used an external power supply I constantly got errors. Turns out it's somewhat of a known issue with newPing. So I migrated to "Ultrasonic" which works fine now 😊
+* NewPing: Initially it worked fine and just as intended. However when I didn't provide USB-power anymore but used an external power supply I constantly got errors. Turns out it's somewhat of [a known issue with newPing](https://arduino.stackexchange.com/questions/17406/ultrasonic-sensor-returns-random-values-on-external-power-supply). So I migrated to "Ultrasonic" which works fine now 😊
