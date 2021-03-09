@@ -32,7 +32,7 @@ Cut the crank apart if you want to, or use another 6mm allen wrench that you can
 ![Wiring for the Ikea Skarsta project](https://github.com/DerRheingold/motorized-IKEA-Skarsta/blob/main/wiring/MotorControlWithSonar.jpg)
 
 ## First run:
-![First setup of the system](https://github.com/DerRheingold/motorized-IKEA-Skarsta/blob/main/_pictures/first%20setup.jpg
+![First setup of the system](https://github.com/DerRheingold/motorized-IKEA-Skarsta/blob/main/_pictures/first%20setup.jpg)
 Install everything outside of the desk first. When you're sure that everything is complete and the motors turn correctly install them under your desk. Make sure to measure trice and screw in only once 😉 Between the table and the L-Bracket holding the motors I installed 3mm washers to get the motor into the correct height compared to the drive shaft. 
 Once the motors are installed under the table, keep the wiring and Arduino-parts on the table to make a dry run. This will make debugging the software easier. Also Have a look at the Serial Monitor output when it's running, that might help finding errors too.
 
