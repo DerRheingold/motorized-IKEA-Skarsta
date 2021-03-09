@@ -62,7 +62,6 @@
 #include <TM1637Display.h>
 #include <Ultrasonic.h>
 
-
 /* TO DO
 - Sometimes loses value for Position 1 in EEPROM :(
 - Catch loss of sonar signal during automatic table movement
@@ -90,7 +89,7 @@ TM1637Display display(CLK, DIO);
 // Definitions for Platformio
 void readFromEEPROM();
 void validateEEPROM();
-void checkButtonClicksExpired();
+//void checkButtonClicksExpired();
 void handleButtonUp();
 void handleButtonDown();
 void position_0();
@@ -98,20 +97,20 @@ void position_1();
 void checkHeight();
 void goDown();
 void goUp();
-void autoRaiseDesk(long alreadyElapsed);
+//void autoRaiseDesk(long alreadyElapsed);
 void stopMoving();
-void autoLowerDesk(long alreadyElapsed);
-void saveToEEPROM_TimeUp(long timeUp);
-void saveToEEPROM_TimeDown(long timeDown);
-bool handleProgramMode();
+//void autoLowerDesk(long alreadyElapsed);
+//void saveToEEPROM_TimeUp(long timeUp);
+//void saveToEEPROM_TimeDown(long timeDown);
+//bool handleProgramMode();
 
 //Struct to store the various necessary variables to persist the autoRaise/autoLower programs to EEPROM
 struct StoredProgram
 {
-  bool isUpSet = false; //whether the UP program has been recorded
-  bool isDownSet = false; // whether the DOWN program has been recorded
-  float timeUp = 0; //time in milliseconds recorded to RAISE the desk
-  float timeDown = 0; // time in milliseconds recorded to LOWER the desk
+  //bool isUpSet = false; //whether the UP program has been recorded
+  //bool isDownSet = false; // whether the DOWN program has been recorded
+  //float timeUp = 0; //time in milliseconds recorded to RAISE the desk
+  //float timeDown = 0; // time in milliseconds recorded to LOWER the desk
   int pos0Height = 0;
   int pos1Height = 0;
 };
@@ -161,8 +160,8 @@ const int LONG_PRESS_TIME  = 2000; // The time button "0" or "1" need to be pres
 // Required for the ultrasonic sensor
 int oldDistance;
 int current_height = ultrasonic.read(); // get initial reading upon start
-int pos0_height = 2;
-int pos1_height = 3;
+int pos0_height = 0;
+int pos1_height = 0;
 
 // Some digits/figures for the display
 const uint8_t P[] = {
@@ -293,13 +292,16 @@ void setup() {
 }
 
 void loop() {
+  /* Remove program mode
   //If both buttons are pressed and held, check for entering program mode, 
   //if this func returns true we want to skip anything else in the main loop
   if (handleProgramMode()){  
     return;
   }
+  
   //Check if the user didn't click at least twice(default config) in less than a second, reset counters if necessary
   checkButtonClicksExpired();
+  */
 
   //Handle press and hold of buttons to raise/lower, and check if enter auto-raise and auto-lower
   handleButtonUp();
@@ -347,6 +349,7 @@ void position_0 (){
        //If "Position 0 button" is long-pressed, save current height to Position 0 and display "P 0" and the height in cm in the display
        if (TimePressed >= LONG_PRESS_TIME){  
         int pos0SaveHeight = ultrasonic.read();
+        pos1_height = savedProgram.pos1Height;
         if (pos0SaveHeight >= pos1_height) {  //Check if Position 0 is lower than Position 1. If not, display "Err0"
           Serial.print ("must be lower than "); 
           Serial.println (pos1_height);
@@ -485,6 +488,7 @@ void position_1 (){
        //If "Position 1 button" is long-pressed, save current height to Position 1 and display "P 1" and the height in cm in the display
        if (TimePressed >= LONG_PRESS_TIME){ 
         int pos1SaveHeight = ultrasonic.read();
+        pos0_height = savedProgram.pos0Height;
         if (pos1SaveHeight <= pos0_height) {  //Check if Position 1 is higher than Position 0. If not, display "Err1"
           Serial.print ("must be higher than "); 
           Serial.println (pos0_height);
@@ -604,6 +608,7 @@ void checkHeight() {    // Get Sensor Reading and display on 7-Segment
 /****************************************
   MAIN CONTROL FUNCTIONS
 ****************************************/
+/* Remove program mode
 //If you didn't enter auto-raise or auto-lower by doing the magic combination (2 clicks in under a second + click and hold 2 secs)
 //then this function resets the clicks back to zero and the timer. handles both UP and DOWN buttons
 void checkButtonClicksExpired(){
@@ -623,7 +628,7 @@ void checkButtonClicksExpired(){
     btnDownFirstClickTime = 0;
   }
 }
-
+*/
 
 //This function takes care of the events related to pressing BUTTON_UP, and only BUTTON_UP. It raises the desk when holding it, and if you do the 
 //magic combination (click, click, click+hold 2 secs) it will trigger auto-raise if recorded
@@ -679,7 +684,7 @@ void handleButtonUp(){
     {
       Serial.print("BUTTON UP | Going up automatically | Elapsed to activate:");
       Serial.println(elapsed);
-      autoRaiseDesk(elapsed);
+      //autoRaiseDesk(elapsed);
       autoRaiseActivated = false;
       Serial.println("BUTTON UP | PrgUp Deactivated");
     }
@@ -752,7 +757,7 @@ void handleButtonDown()
     {
       Serial.print("BUTTON DOWN | Going DOWN automatically | Elapsed to activate:");
       Serial.println(elapsed);
-      autoLowerDesk(elapsed);
+      //autoLowerDesk(elapsed);
       autoLowerActivated = false;
       Serial.println("BUTTON DOWN | PrgDown Deactivated");
     }
@@ -775,6 +780,7 @@ void handleButtonDown()
 /****************************************
   LOWER / RAISE DESK FUNCTIONS
 ****************************************/
+/* Remove program mode
 // Tries to raise the desk automatically using the previously programmed values
 // This methode doesn't utilize the sonar sensor
 void autoRaiseDesk(long alreadyElapsed)
@@ -873,6 +879,7 @@ void autoLowerDesk(long alreadyElapsed)
     Serial.println("Warning: Can't lower desk on current conditions");
   }
 }
+*/
 
 //Send PWM signal to L298N enX pin (sets motor speed)
 void goUp()
@@ -919,6 +926,7 @@ void stopMoving()
 /****************************************
   EEPROM FUNCTIONS
 ****************************************/
+/* Remove program function
 //Saves the Time it took to raise the desk (timeUP) and sets the desk as Raised
 void saveToEEPROM_TimeUp(long timeUp)
 {
@@ -936,11 +944,13 @@ void saveToEEPROM_TimeDown(long timeDown)
   savedProgram.isDownSet = true;
   EEPROM.put(EEPROM_ADDRESS, savedProgram);
 }
+*/
 
 void readFromEEPROM()
 {
   Serial.println("Reading from EEPROM");
   EEPROM.get(EEPROM_ADDRESS, savedProgram);
+  /*
   long timeUpInt = (long)savedProgram.timeUp;
   Serial.print("TimeUp: ");
   Serial.print(timeUpInt);
@@ -950,22 +960,24 @@ void readFromEEPROM()
   Serial.print(" | IsUPSet: ");
   Serial.print(savedProgram.isUpSet);
   Serial.print(" | IsDownSet: ");
-  Serial.println(savedProgram.isDownSet);
-  Serial.print(" | POS 0: ");
-  Serial.println(savedProgram.pos0Height);
+  Serial.print(savedProgram.isDownSet);
+  */
+  Serial.print("POS 0: ");
+  Serial.print(savedProgram.pos0Height);
   pos0_height = savedProgram.pos0Height;
   Serial.print(" | POS 1: ");
   Serial.println(savedProgram.pos1Height);
   pos1_height = savedProgram.pos1Height;
-  Serial.print("Position 0 is: ");
+  /*Serial.print("Position 0 is: ");
   Serial.print(pos0_height);
   Serial.print("cm | Position 1 is: ");
   Serial.print(pos1_height);
   Serial.println("cm");
-  
+  */
 }
 
 void validateEEPROM(){
+  /*
   if(isnan(savedProgram.timeUp) || isnan(savedProgram.timeDown)){
     Serial.println("Warning: timeUp/Down are NAN, Re-initializing");
     savedProgram.timeUp = 0;
@@ -974,6 +986,7 @@ void validateEEPROM(){
     savedProgram.isDownSet = false;
     EEPROM.put(EEPROM_ADDRESS, savedProgram);
   }
+  */
 }
 
 void clearEEPROM(){
@@ -982,6 +995,7 @@ void clearEEPROM(){
   }
 }
 
+/* Remove part to record time and programing mode
 //Checks if the user is requesting to enter program mode (by pressing and holding both buttons), if so, returns true, otherwise, false
 bool handleProgramMode(){
   if (debounceRead(BUTTON_DOWN, LOW) && debounceRead(BUTTON_UP, LOW))
@@ -1085,3 +1099,4 @@ bool handleProgramMode(){
     return false;
   }
 }
+*/
