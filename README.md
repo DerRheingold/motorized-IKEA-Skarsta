@@ -8,15 +8,15 @@ The basic idea behind this was relatively simple: After the crank of my desk bro
 * http://cesarmoya.com/blog/motorizing-standup-desk/ (for most of the code and parts-list)
 * https://github.com/aenniw/ARDUINO/tree/master/skarsta (for the 3d-printing layouts and the idea with sonar + 7-segment display hidden under a layer of 3D-print)
 
-## The required parts:
-* Arduino Uno
-* L298N Motor Driver
-* 2 x 24v DC Motors (23kg.cm torque)
-* 2 x L-Bracket for Motor
-* 24v 6A AC/DC Adapter
+## The required parts (links to German shops):
+* [Arduino Uno - 22€](https://www.exp-tech.de/plattformen/plattformen/arduino-plattform/mainboards/4380/arduino-uno-r3)
+* [L298N Motor Driver - 4,50€](https://www.ebay.de/sch/i.html?_from=R40&_nkw=L298N&_sacat=0&rt=nc&LH_PrefLoc=1)
+* [2 x 24v DC Motors (23kg.cm torque) - 41,65€/piece](https://www.exp-tech.de/motoren/dc-getriebemotoren/9878/50-1-metal-gearmotor-37dx70l-mm-24v-with-64-cpr-encoder-helical-pinion)
+* [2 x L-Bracket for Motor - 6,50€](https://www.exp-tech.de/motoren/zubehoer-fuer-motoren/4857/pololu-stamped-aluminum-l-bracket-pair-for-37d-mm-metal-gearmotors)
+* [24v 6A AC/DC Adapter - 17€](https://www.ebay.de/itm/Netzteil-Trafo-DC12-24V-2A-10A-Netzadapter-Driver-f-LED-Strip-Streifen-Notebook/224113909308?ssPageName=STRK%3AMEBIDX%3AIT&var=522903200218&_trksid=p2060353.m2749.l2649)
 * 4x Push Buttons
 * 4x 10k OHM Resistors
-* 2 x Motor Shaft Coupling (6mm to 6 or 7mm)
+* [2 x Motor Shaft Coupling (6mm to 6 or 7mm) - 3€/piece](https://www.ebay.de/sch/i.html?_from=R40&_nkw=Wellenkupplung+6mm&_sacat=0&rt=nc&LH_PrefLoc=1)
 * Barrel Jack to Cable adapter
 * Junction Box (replaceable)
 * Solderless Breadboard
@@ -24,6 +24,9 @@ The basic idea behind this was relatively simple: After the crank of my desk bro
 * a friend with a 3D printer 😉
 * some time to do metal working on the original drive shaft
 * 8x 8mm washers
+
+Total cost ~140€ +- depending on what small parts you have at home anyway.
+Links to the shops are no ads, just to the parts I ordered and made some good experience with.
 
 ## The setup
 Cut the crank apart if you want to, or use another 6mm allen wrench that you can get to fit. Note that you'll have to to some metal-work on the 6mm allen wrench to make it fit into the 6mm Motor shaft coupling
