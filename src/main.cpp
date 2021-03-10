@@ -6,6 +6,7 @@
     Controls the direction and speed of the motor, supports auto-raising and auto-lowering by pre-recording their elapsed times
   
   DESCRIPTION 
+  TO DO
     This code waits for a button to be pressed (UP or DOWN), and accordingly powers the motors in the desired direction and speed.
     One motor will turn clockwise, the other counterclockwise. The motors are intended to be placed facing each other, to duplicate the torque on the allen wrench
     On my particular setup (a heavy desktop with 2 monitors) I use 100% of the power speed and torque when raising the desk,
@@ -14,44 +15,20 @@
     are 0 (min) to 255 (max).
 
   BASIC USAGE
-    - Press and hold BUTTON_UP to raise the desk. a small delay of 500ms has been introduced for smoothness
-    - Press and hold BUTTON_DOWN to lower the desk. a small delay of 500ms has been introduced for smoothness
+    - Press and hold BUTTON_UP to raise the desk. a small delay of 250ms has been introduced for smoothness
+    - Press and hold BUTTON_DOWN to lower the desk. a small delay of 250ms has been introduced for smoothness
   
-  PROGRAM MODE (Recording time to raise/lower) - [optional]
-    Use program mode to record the time it takes your motors to raise and lower the desk. once recorded, you can use the auto-raise and auto-lower functions,
-    this is an optional functionality, it's ok if you decide simply not to use it
-    - To enter Program Mode, press and hold BUTTON_UP and BUTTON_DOWN for 3 seconds
-    - The LED on pin 9 will continuously blink rapidly, indicating that the system is in program mode waiting for the user to start recording (raise or lower)
-    - While in program mode, Press and Hold BUTTON_UP to raise the desk and RECORD the time it takes to raise it, this value will be used on auto-raise later
-    - While in program mode, Press and Hold BUTTON_DOWN to lower the desk and RECORD the time it takes to lower it, this value will be used on auto-lower later
-    - After the button is released, the LED will perform a "BLINK_THINKING" followed by a "BLINK_SUCCESS" (see below) to indicate the program was recorded to EEPROM correctly,
-      otherwise, a BLINK_ERROR will be performed
-
-  AUTO RAISING THE DESK [optional]
-    - IMPORTANT: This is a very cool but kind of risky feature, it's completely optional, don't use it if you don't fully understand the risks. Here is why: If you 
-      activate auto-raise, and your desk was already at the maximum height, then - depending on your desk - on the IKEA SKARSTA it will hit a stopping point and the MOTORS WILL
-      STALL for the amount of seconds that you recorded. In other words, if you recorded 30 seconds to raise, and your desk is already at the top position (or close), and 
-      you still enable auto-raise, you risk damaging your motors as a full power will be sent to them but they will be blocked. When using auto-raise and auto-lower you must
-      ALWAYS be present and watching the desk, ready to cancel the operation if the motors stall for any reason. To cancel, simply press any button, or turn the circuit off.
-      I have built-in a somewhat-safety option feature (see below), but there is still a small risk. Needless to say, use at your own risk, I do not assume any responsibility if
-      your motors or anything else breaks because of misuse or any other reason.
-    - In order to automatically raise the desk, you must first record the time it takes to raise it (see PROGRAM MODE above), if you try to input the auto-raise sequence
-      without the time to raise programmed it will simply stop raising and perform a BLINK_ERROR routine. Completely unharmful, you can continue to use the manual up/down buttons
-    - To activate auto-raise (using BUTTON_UP only)
-      - Press the button Twice in less than a second then immediately Press & Hold for 2 seconds (i.e. Press, Press, Press+Hold)
-      - If the sequence was done correctly, the LED will blink continuously (AFTER the 2 seconds of holding) and you can then release the button, 
-        it will continue raising the desk automatically and then stop when the recorded time has elapsed. The 2 seconds that it takes to activate program mode are substracted from
-        the recorded time to keep the total raise time correct (approximately, of course).
-      - Please note, the moment you hold the button (after the 2 presses) the desk will begin to raise, you must keep holding it while it raises for 2 seconds for the program
-        to kick in. This was done on purpose as a safety measure so that if your desk was already at maximum height, you will immediately notice that the motor stalled and you 
-        should release the button immediately. 
-      - To cancel auto-raise at any time, simply press any button. But be CAREFUL if you want to activate it again, as the program simply re-plays the recorded values, and will not 
-        know that you are already at a higher position. see IMPORTANT note above for details.
-
-  AUTO LOWERING THE DESK [optional]
-    - Follow the same exact steps as with AUTO RAISING, but using BUTTON_DOWN
+  AUTO RAISING THE DESK
+   TO DO
+    
+  AUTO LOWERING THE DESK
+    TO DO
 
   You may use this code and all of the diagrams and documentations completely free. Enjoy!
+
+  Credits to the inspiration:
+  - https://github.com/cesar-moya/arduino-power-desktop
+  - https://github.com/aenniw/ARDUINO/tree/master/skarsta
   
   Author: Cesar Moya
   Date:   July 28th, 2020
@@ -63,24 +40,23 @@
 #include <Ultrasonic.h>
 
 /* TO DO
-- delete PRG_ACTIVATE_PRECLICKS etc
-- Catch loss of sonar signal during automatic table movement
+- update description
 */
 
-#define BUTTON_UP 2   //ATM-5
-#define BUTTON_DOWN 3 //ATM-4
-#define BUTTON_POS_0 4
-#define BUTTON_POS_1 5
-#define enA 6         //ATM-12
-#define in1 7         //ATM-13
-#define in2 8         //ATM-14
-#define enB 10        //ATM-16
-#define in3 11        //ATM-17
-#define in4 12        //ATM-18
-#define CLK 14 // 7 Segment
-#define DIO 15 // 7 Segment
-#define ECHO_PIN     16  // Arduino pin tied to echo pin on the ultrasonic sensor.
-#define TRIGGER_PIN  17  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define BUTTON_UP 2     //ATM-5
+#define BUTTON_DOWN 3   //ATM-4
+#define BUTTON_POS_0 4  //
+#define BUTTON_POS_1 5  //
+#define enA 6           //ATM-12
+#define in1 7           //ATM-13
+#define in2 8           //ATM-14
+#define enB 10          //ATM-16
+#define in3 11          //ATM-17
+#define in4 12          //ATM-18
+#define CLK 14          // 7 Segment
+#define DIO 15          // 7 Segment
+#define ECHO_PIN 16     // Arduino pin tied to echo pin on the ultrasonic sensor.
+#define TRIGGER_PIN 17  // Arduino pin tied to trigger pin on the ultrasonic sensor.
 
 Ultrasonic ultrasonic(TRIGGER_PIN, ECHO_PIN);
 TM1637Display display(CLK, DIO);
@@ -111,28 +87,6 @@ bool BUTTON_POS_0_STATE = LOW;
 bool BUTTON_POS_1_STATE = LOW;
 long BUTTON_WAIT_TIME = 250; //the small delay before starting to go up/down for smoothness on any button
 
-//Program Mode SET/ACTIVATE variables
-//The following three properties can be understood as follows: a user needs to do [PRG_ACTIVATE_PRECLICKS] clicks in less than [PRG_ACTIVATE_PRECLICK_THRESHOLD] ms, and then
-//hold the list click for [PRG_ACTIVATE_HOLD_THRESHOLD] ms, to activate auto-raise / auto-lower mode
-int  PRG_ACTIVATE_PRECLICKS = 3;//number of clicks before checking for hold to activate auto-raise/lower
-long PRG_ACTIVATE_PRECLICK_THRESHOLD = 1000; //the threshold for the PRG_ACTIVATE_PRECLICKS before PRG_ACTIVATE_HOLD_THRESHOLD check kicks in
-long PRG_ACTIVATE_HOLD_THRESHOLD = 2000;  //threshold that needs to elapse holding a button (up OR down) after preclicks has been satisfied to enter auto-raise / auto-lower
-
-//the time to enter program mode, to record a new timeUp/timeDown value
-long PRG_SET_THRESHOLD = 2000;
-//the time when the user began pressing and holding both buttons, attempting to enter program mode
-long holdButtonsStartTime = 0; 
-
-//Button UP variables
-int btnUpClicks = 0;
-long btnUpFirstClickTime = 0;
-bool autoRaiseActivated = false;
-
-//Button DOWN variables
-int btnDownClicks = 0;
-long btnDownFirstClickTime = 0;
-bool autoLowerActivated = false;
-
 //Using custom values to ensure no more than 24v are delivered to the motors given my desk load.
 //feel free to play with these numbers but make sure to stay within your motor's rated voltage.
 const int PWM_SPEED_UP = 255; //0 - 255, controls motor speed when going UP
@@ -146,8 +100,8 @@ const int LONG_PRESS_TIME  = 2000; // The time button "0" or "1" need to be pres
 
 
 // Required for the ultrasonic sensor
-int oldDistance;
-int current_height = ultrasonic.read(); // get initial reading upon start
+int old_Height;
+int current_height = 0; // get initial reading upon start
 int pos0_height = 0;
 int pos1_height = 0;
 
@@ -209,7 +163,7 @@ void setup() {
   pinMode(in3, OUTPUT);
   pinMode(in4, OUTPUT);
   readFromEEPROM();
-  current_height = ultrasonic.read();
+  //current_height = ultrasonic.read();
   int digitPosition = 0;
   display.setBrightness(1);
   display.clear();
@@ -300,7 +254,7 @@ void position_0 (){
    current_height = ultrasonic.read();
    if (!BUTTON_POS_0_STATE && debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){  //define what to do when the button is pressed 
        BUTTON_POS_0_STATE=HIGH;
-       Serial.println("POS 0 pressed");
+       Serial.println("BUTTON Position 0 Pressed");
        pressedTime = millis(); 
        int digitPosition = 0;
        while (btnPos0State && debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){  //small animation on Display while button is held down longer than 500 ms
@@ -352,23 +306,21 @@ void position_0 (){
        }
          
        if (TimePressed < LONG_PRESS_TIME){  //If "Position 0 button" is short-pressed, check height and if possible drive to desired height
-        
         display.setSegments (P,1,0);
         display.setSegments (empty,1,1);
         display.setSegments (Zero,1,2);
         display.setSegments (empty,1,3);
-        
         delay (100);
         int desired_height = pos0_height;
-        //if (current_height == 0){ //Catch Sonar-Error before starting program
-          //Serial.println("Down Er 1");
-        //};
+        if (current_height == 0){ //Catch Sonar-Error before starting program
+          Serial.println("Won't start Down-Program because of Sonar Error.");
+        };
         while (current_height > desired_height){
           checkHeight();
           Serial.print ("current: "); Serial.println(current_height);
           Serial.print ("desired: "); Serial.println(desired_height);
           goDown();
-          if (current_height <= desired_height){ //stop automatically if the desired height is reached
+          if (current_height <= desired_height && current_height != 0){ //stop automatically if the desired height is reached
             stopMoving();
             Serial.println("Desk too low");
             display.setSegments (P,1,0);
@@ -380,7 +332,7 @@ void position_0 (){
             break;
           }
           else if (current_height == 0){  //Catch Sonar-Error while table is moving
-            Serial.println("Sonar Error in automated program");
+            Serial.println("Sonar Error in automated down-program");
             checkHeight();
             break;
           }
@@ -420,6 +372,8 @@ void position_0 (){
             btnDownState = LOW;
           }
         };
+        Serial.println("End Down-Program");
+        stopMoving();
         delay (500);
         checkHeight();
         delay (1500);
@@ -440,6 +394,7 @@ void position_1 (){
    bool btnPos1State = digitalRead(BUTTON_POS_1);
    current_height = ultrasonic.read();
     if (!BUTTON_POS_1_STATE && debounceRead(BUTTON_POS_1, BUTTON_POS_1_STATE)){ //define what to do when the button is pressed 
+       Serial.println("BUTTON Position 1 Pressed");
        BUTTON_POS_1_STATE=HIGH;
        pressedTime = millis(); 
        int digitPosition = 0;
@@ -497,7 +452,10 @@ void position_1 (){
         display.setSegments (empty,1,3);
         delay (100);
         int desired_height = pos1_height;
-        while (current_height < desired_height){
+        if (current_height == 0){ //Catch Sonar-Error before starting program
+          Serial.println("Won't start Up-Program because of Sonar Error.");
+        };
+        while (current_height < desired_height && current_height != 0){
           checkHeight();
           Serial.print ("current: "); Serial.println(current_height);
           Serial.print ("desired: "); Serial.println(desired_height);
@@ -514,7 +472,7 @@ void position_1 (){
             break;
           }
           else if (current_height == 0){  //Catch Sonar-Error while table is moving
-            Serial.println("Sonar Error in automated program");
+            Serial.println("Sonar Error in automated up-program");
             checkHeight();
             break;
           }
@@ -554,7 +512,8 @@ void position_1 (){
             btnDownState = LOW;
           }
         };
-        Serial.println("End");
+        Serial.println("End Up-Program");
+        stopMoving();
         delay (500);
         checkHeight();
         delay (1500);
@@ -567,10 +526,10 @@ void position_1 (){
 void checkHeight() {    // Get Sensor Reading and display on 7-Segment
   display.setBrightness(1);
   current_height = ultrasonic.read();
-  Serial.print("current height: "); Serial.println(current_height);
-  if (current_height != oldDistance) {  //avoid flickering of 7-segment as it now only refreshes if the value has changed
+  if (current_height != old_Height && current_height != 0) {  //avoid flickering of 7-segment as it now only refreshes if the value has changed
+    Serial.print("current height: "); Serial.println(current_height);
     display.showNumberDec(current_height, false);
-    oldDistance = current_height;
+    old_Height = current_height;
   }
   if (current_height == 0) { //display "Err2" if the sonar sensor has an error"
     display.setSegments (Err,3,0);
@@ -586,43 +545,26 @@ void checkHeight() {    // Get Sensor Reading and display on 7-Segment
 ****************************************/
 //This function takes care of the events related to pressing BUTTON_UP, and only BUTTON_UP. It raises the desk when holding it, and if you do the 
 //magic combination (click, click, click+hold 2 secs) it will trigger auto-raise if recorded
-void handleButtonUp(){
+void handleButtonUp()
+{
   //If button has just been pressed, we count the presses, and we also handle if it's kept hold to raise desk / enter program
   if (!BUTTON_UP_STATE && debounceRead(BUTTON_UP, BUTTON_UP_STATE))
   {
-    Serial.print("BUTTON UP | Pressed [");
-    Serial.print(btnUpClicks);
-    Serial.println("] times");    
+    Serial.println("BUTTON UP Pressed");
     BUTTON_UP_STATE = HIGH;
-    if (btnUpClicks == 0)
-    {
-      btnUpFirstClickTime = millis();
-    }
-    btnUpClicks++;
     long pressTime = millis();
     long elapsed = 0;
-    while (digitalRead(BUTTON_UP) && !autoRaiseActivated)
+    while (digitalRead(BUTTON_UP))
     {
       elapsed = millis() - pressTime;
       Serial.print("BUTTON UP | Holding | elapsed: ");
-      Serial.print(elapsed);
-      Serial.print(" | Clicks: ");
-      Serial.println(btnUpClicks);
+      Serial.println(elapsed);
       checkHeight();
 
       //small delay before starting to work for smoothness
       if (elapsed >= BUTTON_WAIT_TIME)
       {
-        //if 2 clicks + hold for 2 secs, enter auto-raise
-        if (btnUpClicks >= PRG_ACTIVATE_PRECLICKS && elapsed >= PRG_ACTIVATE_HOLD_THRESHOLD) 
-        {
-          autoRaiseActivated = true;
-          break;
-        }
-        else
-        {
-          goUp();
-        }
+        goUp();
       }
 
       //If you press down while holding UP, you indicate desire to enter program mode, break the loop to stop going
@@ -633,16 +575,6 @@ void handleButtonUp(){
         break;
       }
     }
-
-    if (autoRaiseActivated)
-    {
-      Serial.print("BUTTON UP | Going up automatically | Elapsed to activate:");
-      Serial.println(elapsed);
-      //autoRaiseDesk(elapsed);
-      autoRaiseActivated = false;
-      Serial.println("BUTTON UP | PrgUp Deactivated");
-    }
-
     stopMoving();
   }
   else if (BUTTON_UP_STATE && !debounceRead(BUTTON_UP, BUTTON_UP_STATE))
@@ -662,40 +594,21 @@ void handleButtonDown()
   //If button has just been pressed, we count the presses, and we also handle if it's kept hold to lower desk / enter program
   if (!BUTTON_DOWN_STATE && debounceRead(BUTTON_DOWN, BUTTON_DOWN_STATE))
   {
-    Serial.print("BUTTON DOWN | Pressed [");
-    Serial.print(btnDownClicks);
-    Serial.println("] times");
+    Serial.println("BUTTON DOWN | Pressed");
     BUTTON_DOWN_STATE = HIGH;
-    if (btnDownClicks == 0)
-    {
-      btnDownFirstClickTime = millis();
-    }
-    btnDownClicks++;
-
     long pressTime = millis();
     long elapsed = 0;
-    while (digitalRead(BUTTON_DOWN) && !autoLowerActivated)
+    while (digitalRead(BUTTON_DOWN))
     {
       elapsed = millis() - pressTime;
       Serial.print("BUTTON DOWN | Holding | elapsed: ");
-      Serial.print(elapsed);
-      Serial.print(" | Clicks: ");
-      Serial.println(btnDownClicks);
+      Serial.println(elapsed);
       checkHeight();
+
       //small delay before starting to work for smoothness
       if (elapsed >= BUTTON_WAIT_TIME) 
       {
-        //if 2 clicks + hold for 2 secs, enter auto-lower
-        if (btnDownClicks >= PRG_ACTIVATE_PRECLICKS && elapsed >= PRG_ACTIVATE_HOLD_THRESHOLD) 
-        {
-          autoLowerActivated = true;
-          break;
-        }
-        else
-        {
-          //checkHeight();  //for testing ultrasonic sensor
-          goDown();
-        }
+        goDown();
       }
 
       //If you press UP while holding DOWN, you indicate desire to enter program mode, break the loop to stop going
@@ -706,16 +619,6 @@ void handleButtonDown()
         break;
       }
     }
-
-    if (autoLowerActivated)
-    {
-      Serial.print("BUTTON DOWN | Going DOWN automatically | Elapsed to activate:");
-      Serial.println(elapsed);
-      //autoLowerDesk(elapsed);
-      autoLowerActivated = false;
-      Serial.println("BUTTON DOWN | PrgDown Deactivated");
-    }
-
     stopMoving();
   }
   else if (BUTTON_DOWN_STATE && !debounceRead(BUTTON_DOWN, BUTTON_DOWN_STATE))
@@ -727,8 +630,6 @@ void handleButtonDown()
     display.clear();
   }
 }
-
-
 
 
 /****************************************
@@ -788,12 +689,13 @@ void readFromEEPROM()
   pos0_height = savedProgram.pos0Height;
   Serial.print("cm | Position 1: ");
   Serial.print(savedProgram.pos1Height);
-  Serial.print("cm");
+  Serial.println("cm");
   pos1_height = savedProgram.pos1Height;
 }
 
 void clearEEPROM(){
-  for (int i = 0 ; i < EEPROM.length() ; i++) {
+  int eeprom_length = EEPROM.length();
+  for (int i = 0; i < eeprom_length; i++) {
     EEPROM.write(i, 0);
   }
 }
