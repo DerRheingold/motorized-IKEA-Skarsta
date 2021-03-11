@@ -27,23 +27,27 @@ The basic idea behind this was relatively simple: After the crank of my desk bro
 * a friend with a 3D printer 😉
 * some time to do metal working on the original drive shaft
 
-Total cost ~140€ +- depending on what small parts you have at home anyway.
+Total cost ± 140€ depending on what small parts you have at home anyway.
 Links to the shops are no ads, just to the parts I ordered and made some good experience with.
 
 ## The setup
-Cut the crank apart if you want to, or use another 6mm allen wrench that you can get to fit. Note that you'll have to to some metal-work on the 6mm allen wrench to make it fit into the 6mm Motor shaft coupling
+Cut the crank apart if you want to, or use another 6mm allen wrench that you can get to fit. Note that you'll have to do some metal-work on the 6mm allen wrench to make it fit into the motor shaft coupling
 
-## The wiring:
+## The wiring
 ![Wiring for the Ikea Skarsta project](https://github.com/DerRheingold/motorized-IKEA-Skarsta/blob/main/wiring/MotorControlWithSonar.jpg)
 
-## First run:
+## First run
 ![First setup of the system](https://github.com/DerRheingold/motorized-IKEA-Skarsta/blob/main/_pictures/first%20setup.jpg)
-Install everything outside of the desk first. When you're sure that everything is complete and the motors turn correctly install them under your desk. Make sure to measure trice and screw in only once 😉 Between the table and the L-Bracket holding the motors I installed 3mm washers to get the motor into the correct height compared to the drive shaft. 
+Install everything outside of the desk first. When you're sure that everything is complete and the motors turn correctly install them under your desk. Make sure to measure trice and screw in only once 😉 Between the table and the L-Bracket holding the motors I installed 3mm washers to get the motor into the correct height aligned to the drive shaft. 
+
 Once the motors are installed under the table, keep the wiring and Arduino-parts on the table to make a dry run. This will make debugging the software easier. Also Have a look at the Serial Monitor output when it's running, that might help finding errors too.
+
+Remember to unplug the 5V-Pin in the arduino if you're running the external power to the peripherals and have the arduino plugged in to your PC via USB.
 
 ## 3D print
 A friend and colleague of mine was so kind to assist my project when it came to the part of 3D printing. Based on the files provided he shortened the panel to house the display and 4 buttons: up, down, 0 and 1.
-Also the housing for the sonar sensor was printed. Yes we could have made some housing to fisonar, display and buttons in one pice. but you need to leave some room for improvement 😉 It's on our backlog for the future 😊
+
+Also the housing for the sonar sensor was printed. Yes we could have made some housing to fit sonar, display and buttons in one pice. That's maybe something for a future update 😉
 
 ## Problems encountered and solved
 * Voltage: First I tried with a 29V 2A power supply. This didn't provide enough "ompf" to let the motors drive the desk up. It only wen down 🙄 After upgrading to a 24V 6A power supply it worked fine. Though the L298N only outputs 18-19V to the motors the current is strong enough to power the motors. After all they are rated with 3A per motor :)
