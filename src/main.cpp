@@ -3,13 +3,12 @@
    Arduino Power Desktop PLUS
   ----------------------------
   SUMMARY 
-    Controls the direction and speed of the motor, supports auto-raising and auto-lowering by pre-recording their elapsed times
+    Controls the direction and speed of the motor, supports auto-raising and auto-lowering by measuring the distance via sonar sensor
   
   DESCRIPTION 
-  TO DO
     This code waits for a button to be pressed (UP or DOWN), and accordingly powers the motors in the desired direction and speed.
     One motor will turn clockwise, the other counterclockwise. The motors are intended to be placed facing each other, to duplicate the torque on the allen wrench
-    On my particular setup (a heavy desktop with 2 monitors) I use 100% of the power speed and torque when raising the desk,
+    On my particular setup (a heavy water cooled tower-PC and one 49" monitor totaling around 35-40 kg) I use 100% of the power speed and torque when raising the desk,
     however, when lowering the desk I need a bit less since gravity helps, to keep the speed up and down at a similar rate, this is configurable.
     You may want to tweak the variables PWM_SPEED_UP and PWM_SPEED_DOWN to adjust it to your desktop load, the allowed values
     are 0 (min) to 255 (max).
@@ -17,22 +16,28 @@
   BASIC USAGE
     - Press and hold BUTTON_UP to raise the desk. a small delay of 250ms has been introduced for smoothness
     - Press and hold BUTTON_DOWN to lower the desk. a small delay of 250ms has been introduced for smoothness
-  
-  AUTO RAISING THE DESK
-   TO DO
-    
-  AUTO LOWERING THE DESK
-    TO DO
+    - Press and hold the "Position 0" button to save the lower/sitting position
+    - Press and hold the "Position 1" button to save the higher/standing position
+    - Press the "Position 0" button shortly to automatically have the desk drive into this position. It stops as soon as the sonar sensor reads the distance from the ground is equal or lower than saved
+    - Press the "Position 1" button shortly to automatically have the desk drive into this position. It stops as soon as the sonar sensor reads the distance from the ground is equal or higher than saved
+    - The desk should also automatically stop as soon as there is an error in the sonar reading
+
+  ERROR CODES
+    Err0: When trying to save a sitting position that is HIGHER than a standing position "Err0" will be shown in the display
+    Err1: When trying to save a standing position that is LOWER than a sitting position "Err1" will be shown in the display
+    Err2: If there is an error in the sonar (be it while manually or automatically moving the desk) "Err2" is shown in the display. The automatic program will stop directly. Manual adjustment is still possible.
+
 
   You may use this code and all of the diagrams and documentations completely free. Enjoy!
 
-  Credits to the inspiration:
-  - https://github.com/cesar-moya/arduino-power-desktop
-  - https://github.com/aenniw/ARDUINO/tree/master/skarsta
+  CREDITS
+  - https://github.com/cesar-moya/arduino-power-desktop <-- most of the code
+  - https://github.com/aenniw/ARDUINO/tree/master/skarsta <-- idea with the 7-segment display and 3d-print files
   
-  Author: Cesar Moya
-  Date:   July 28th, 2020
-  URL:    https://github.com/cesar-moya/arduino-power-desktop
+  Original Author:  Cesar Moya
+             Date:  July 28th, 2020
+              URL:  https://github.com/cesar-moya/arduino-power-desktop
+  Updated by:       https://github.com/DerRheingold/motorized-IKEA-Skarsta
 */
 #include <EEPROM.h>
 #include <Arduino.h>
@@ -40,23 +45,23 @@
 #include <Ultrasonic.h>
 
 /* TO DO
-- update description
+- Description
 */
 
-#define BUTTON_UP 2     //ATM-5
-#define BUTTON_DOWN 3   //ATM-4
-#define BUTTON_POS_0 4  //
-#define BUTTON_POS_1 5  //
-#define enA 6           //ATM-12
-#define in1 7           //ATM-13
-#define in2 8           //ATM-14
-#define enB 10          //ATM-16
-#define in3 11          //ATM-17
-#define in4 12          //ATM-18
+#define BUTTON_UP 2     
+#define BUTTON_DOWN 3   
+#define BUTTON_POS_0 4  
+#define BUTTON_POS_1 5  
+#define enA 6           
+#define in1 7           
+#define in2 8           
+#define enB 10          
+#define in3 11          
+#define in4 12          
 #define CLK 14          // 7 Segment
 #define DIO 15          // 7 Segment
-#define ECHO_PIN 16     // Arduino pin tied to echo pin on the ultrasonic sensor.
-#define TRIGGER_PIN 17  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define ECHO_PIN 16     // Arduino pin tied to echo pin on the ultrasonic sensor
+#define TRIGGER_PIN 17  // Arduino pin tied to trigger pin on the ultrasonic sensor
 
 Ultrasonic ultrasonic(TRIGGER_PIN, ECHO_PIN);
 TM1637Display display(CLK, DIO);
@@ -96,12 +101,11 @@ const int PWM_SPEED_DOWN = 220; //0 - 255, controls motor speed when going DOWN
 long pressedTime;
 long releasedTime;
 long TimePressed;
-const int LONG_PRESS_TIME  = 2000; // The time button "0" or "1" need to be pressed to register as a "long" press and with that save the position to eeprom.
-
+const int LONG_PRESS_TIME  = 2000; // The time button "0" or "1" need to be pressed to register as a "long" press to save the current position to eeprom.
 
 // Required for the ultrasonic sensor
 int old_Height;
-int current_height = 0; // get initial reading upon start
+int current_height = 0;
 int pos0_height = 0;
 int pos1_height = 0;
 
@@ -237,7 +241,7 @@ void loop() {
   handleButtonUp();
   handleButtonDown();
 
-  //Handle press and hold of buttons to trigger a saved position or save the current position
+  //Handle press and hold of buttons to drive into a saved position (short press) or to save the current position (long press)
   position_0();
   position_1();
 }
@@ -276,7 +280,7 @@ void position_0 (){
        releasedTime = millis();   
        TimePressed = releasedTime-pressedTime;
 
-       //If "Position 0 button" is long-pressed, save current height to Position 0 and display "P 0" and the height in cm in the display
+       //If "Position 0 button" is long-pressed, save current height to Position 0, display "P 0" and the height in cm in the display
        if (TimePressed >= LONG_PRESS_TIME){  
         int pos0SaveHeight = ultrasonic.read();
         pos1_height = savedProgram.pos1Height;
@@ -321,8 +325,9 @@ void position_0 (){
           Serial.print ("desired: "); Serial.println(desired_height);
           goDown();
           if (current_height <= desired_height && current_height != 0){ //stop automatically if the desired height is reached
+            delay (500); //a short delay to compensate for sensor inaccuracy.
             stopMoving();
-            Serial.println("Desk too low");
+            Serial.println("Sitting position reached");
             display.setSegments (P,1,0);
             display.setSegments (empty,1,1);
             display.setSegments (Zero,1,2);
@@ -331,7 +336,7 @@ void position_0 (){
             checkHeight();
             break;
           }
-          else if (current_height == 0){  //Catch Sonar-Error while table is moving
+          else if (current_height == 0){  //Catch Sonar-Error while table is moving and abort program
             Serial.println("Sonar Error in automated down-program");
             checkHeight();
             break;
@@ -461,8 +466,9 @@ void position_1 (){
           Serial.print ("desired: "); Serial.println(desired_height);
           goUp();
           if (current_height >= desired_height){ //stop automatically if the desired height is reached
+            delay (500); //a short delay to compensate for sensor inaccuracy.
             stopMoving();
-            Serial.println("too high");
+            Serial.println("Standing position reached");
             display.setSegments (P,1,0);
             display.setSegments (empty,1,1);
             display.setSegments (One,1,2);
@@ -471,7 +477,7 @@ void position_1 (){
             checkHeight();
             break;
           }
-          else if (current_height == 0){  //Catch Sonar-Error while table is moving
+          else if (current_height == 0){  //Catch Sonar-Error while table is moving and abort program
             Serial.println("Sonar Error in automated up-program");
             checkHeight();
             break;
@@ -543,11 +549,10 @@ void checkHeight() {    // Get Sensor Reading and display on 7-Segment
 /****************************************
   MAIN CONTROL FUNCTIONS
 ****************************************/
-//This function takes care of the events related to pressing BUTTON_UP, and only BUTTON_UP. It raises the desk when holding it, and if you do the 
-//magic combination (click, click, click+hold 2 secs) it will trigger auto-raise if recorded
+//This function takes care of the events related to pressing BUTTON_UP, and only BUTTON_UP. It raises the desk when holding it
 void handleButtonUp()
 {
-  //If button has just been pressed, we count the presses, and we also handle if it's kept hold to raise desk / enter program
+  //If button is held the desk raises
   if (!BUTTON_UP_STATE && debounceRead(BUTTON_UP, BUTTON_UP_STATE))
   {
     Serial.println("BUTTON UP Pressed");
@@ -587,11 +592,10 @@ void handleButtonUp()
   }
 }
 
-//This function takes care of the events related to pressing BUTTON_DOWN, and only BUTTON_DOWN. It lowers the desk when holding it, and if you do the
-//magic combination (click, click, click+hold 2 secs) it will trigger auto-lower if recorded
+//This function takes care of the events related to pressing BUTTON_DOWN, and only BUTTON_DOWN. It lowers the desk when holding it
 void handleButtonDown()
 {
-  //If button has just been pressed, we count the presses, and we also handle if it's kept hold to lower desk / enter program
+  //If button is held the desk lowers
   if (!BUTTON_DOWN_STATE && debounceRead(BUTTON_DOWN, BUTTON_DOWN_STATE))
   {
     Serial.println("BUTTON DOWN | Pressed");
