@@ -45,7 +45,7 @@
 #include <Ultrasonic.h>
 
 /* TO DO
-- Description
+- 
 */
 
 #define BUTTON_UP 2     
@@ -86,10 +86,10 @@ struct StoredProgram
 
 StoredProgram savedProgram;
 int EEPROM_ADDRESS = 0;
-bool BUTTON_UP_STATE = LOW;
-bool BUTTON_DOWN_STATE = LOW;
-bool BUTTON_POS_0_STATE = LOW;
-bool BUTTON_POS_1_STATE = LOW;
+int BUTTON_UP_STATE = LOW;
+int BUTTON_DOWN_STATE = LOW;
+int BUTTON_POS_0_STATE = LOW;
+int BUTTON_POS_1_STATE = LOW;
 long BUTTON_WAIT_TIME = 250; //the small delay before starting to go up/down for smoothness on any button
 
 //Using custom values to ensure no more than 24v are delivered to the motors given my desk load.
@@ -127,16 +127,23 @@ const uint8_t Err[] = {
   SEG_E | SEG_G, // r
   SEG_E | SEG_G, // r
 };
-uint8_t Minus[] = {
+const uint8_t E[] = {
+  SEG_A | SEG_D | SEG_E | SEG_F | SEG_G, // E
+};
+const uint8_t R[] = {
+  SEG_E | SEG_G, // r
+  SEG_E | SEG_G, // r
+};
+const uint8_t Minus[] = {
   SEG_G  // -
 };
-uint8_t smallO [] = {
+const uint8_t smallO [] = {
   SEG_C | SEG_D | SEG_E | SEG_G // o
 };
-uint8_t circle [] = {
+const uint8_t circle [] = {
   SEG_A | SEG_B | SEG_F | SEG_G  // ° 
 };
-uint8_t empty[] = {0x0}; //blank segment for 7-Segment display
+const uint8_t empty[] = {0x0}; //blank segment for 7-Segment display
         
 
 //This function debounces the initial button reads to prevent flickering
@@ -151,7 +158,24 @@ bool debounceRead(int buttonPin, bool state)
   return stateNow;
 }
 
+void animation (const uint8_t* symbol, int delayTime){
+  int digitPosition = 0;
+  while (digitPosition <  4 ){  
+    delay (delayTime);
+    display.setSegments (symbol,1,digitPosition);
+    digitPosition++;
+    if (digitPosition >= 4){
+      break;
+    }
+  };
+}
 
+void showOnDisplay (const uint8_t* firstChar, const uint8_t* secondChar, const uint8_t* thirdChar, const uint8_t* fourthChar){
+  display.setSegments (firstChar,1,0);  
+  display.setSegments (secondChar,1,1);
+  display.setSegments (thirdChar,1,2);
+  display.setSegments (fourthChar,1,3);
+}
 
 void setup() {
   Serial.begin(9600);
@@ -168,63 +192,24 @@ void setup() {
   pinMode(in4, OUTPUT);
   readFromEEPROM();
   //current_height = ultrasonic.read();
-  int digitPosition = 0;
   display.setBrightness(1);
   display.clear();
   //Some start-up-animation on Display
-  while (digitPosition <  4 ){  
-    delay (100);
-    display.setSegments (smallO,1,digitPosition);
-    digitPosition++;
-    if (digitPosition >= 4){
-      digitPosition=0;
-      break;
-    }
-  };
-  while (digitPosition < 4){
-    delay (100);
-    display.setSegments (circle,1,digitPosition);
-    digitPosition++;
-    if (digitPosition >= 4){
-      digitPosition=0;
-      break;
-    }
-  };
-  while (digitPosition < 4){
-    delay (100);
-    display.setSegments (Zero,1,digitPosition);
-    digitPosition++;
-    if (digitPosition >= 4){
-      digitPosition=0;
-      break;
-    }
-  };
-  while (digitPosition < 4){
-    delay (100);
-    display.setSegments (empty,1,digitPosition);
-    digitPosition++;
-    if (digitPosition >= 4){
-      digitPosition=0;
-      break;
-    }
-  };
+  animation (smallO, 100);
+  animation (circle, 100);
+  animation (Zero, 100);
+  animation (empty, 100);
   display.clear();
   delay (400);
   // Display the saved Position 0 height on the display upon startup
-  display.setSegments (P,1,0);  
-  display.setSegments (empty,1,1);
-  display.setSegments (Zero,1,2);
-  display.setSegments (empty,1,3);
+  showOnDisplay (P, empty, Zero, empty);
   delay (1000);
   display.showNumberDec(pos0_height, false);
   delay (1500);
   display.clear();
   delay (400);
   // Display the saved Position 1 height on the display upon startup
-  display.setSegments (P,1,0); 
-  display.setSegments (empty,1,1);
-  display.setSegments (One,1,2);
-  display.setSegments (empty,1,3);
+  showOnDisplay (P, empty, One, empty);
   delay (1000);
   display.showNumberDec(pos1_height, false);
   delay (1500);
@@ -256,26 +241,23 @@ void position_0 (){
    bool btnDownState = digitalRead(BUTTON_DOWN);
    bool btnPos0State = digitalRead(BUTTON_POS_0);
    current_height = ultrasonic.read();
-   if (!BUTTON_POS_0_STATE && debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){  //define what to do when the button is pressed 
+   if (BUTTON_POS_0_STATE==LOW && debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){  //define what to do when the button is pressed 
        BUTTON_POS_0_STATE=HIGH;
        Serial.println("BUTTON Position 0 Pressed");
        pressedTime = millis(); 
        int digitPosition = 0;
        while (btnPos0State && debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){  //small animation on Display while button is held down longer than 500 ms
-         delay (500);
+         delay (400);
          display.setSegments (smallO,1,digitPosition);
          digitPosition++;
          if (digitPosition >= 4){
-          delay (500);
-          display.setSegments (Zero,1,0);
-          display.setSegments (Zero,1,1);
-          display.setSegments (Zero,1,2);
-          display.setSegments (Zero,1,3);
+          delay (400);
+          showOnDisplay (Zero, Zero, Zero, Zero);
           break;
-         }
-       }
-   }
-   else if (BUTTON_POS_0_STATE && !debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){ //releasing the button checks how long it was pressed and then decides what to do
+          }
+        }
+      }
+   else if (BUTTON_POS_0_STATE==HIGH && !debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){ //releasing the button checks how long it was pressed and then decides what to do
        BUTTON_POS_0_STATE=LOW;
        releasedTime = millis();   
        TimePressed = releasedTime-pressedTime;
@@ -287,21 +269,16 @@ void position_0 (){
         if (pos0SaveHeight >= pos1_height) {  //Check if Position 0 is lower than Position 1. If not, display "Err0"
           Serial.print ("must be lower than "); 
           Serial.println (pos1_height);
-          display.setSegments (Err,3,0);
-          display.setSegments (Zero,1,3);
+          showOnDisplay (E, R, R, Zero);
           delay (1000);
           display.clear();
         }
         else { // Save height and give output to user
           savedProgram.pos0Height = pos0SaveHeight;
           EEPROM.put(EEPROM_ADDRESS, savedProgram);
-          //EEPROM_ADDRESS +=sizeof (pos0SaveHeight);
           Serial.print("Saved Position 0: ");
           Serial.println(pos0SaveHeight);
-          display.setSegments (P,1,0);
-          display.setSegments (empty,1,1);
-          display.setSegments (Zero,1,2);
-          display.setSegments (empty,1,3);
+          showOnDisplay (P, empty, One, empty);
           delay (1000);
           display.showNumberDec(pos0SaveHeight, false);
           delay (1000);
@@ -310,10 +287,7 @@ void position_0 (){
        }
          
        if (TimePressed < LONG_PRESS_TIME){  //If "Position 0 button" is short-pressed, check height and if possible drive to desired height
-        display.setSegments (P,1,0);
-        display.setSegments (empty,1,1);
-        display.setSegments (Zero,1,2);
-        display.setSegments (empty,1,3);
+        showOnDisplay (P, empty, Zero, empty);
         delay (100);
         int desired_height = pos0_height;
         if (current_height == 0){ //Catch Sonar-Error before starting program
@@ -321,17 +295,13 @@ void position_0 (){
         };
         while (current_height > desired_height){
           checkHeight();
-          Serial.print ("current: "); Serial.println(current_height);
           Serial.print ("desired: "); Serial.println(desired_height);
           goDown();
           if (current_height <= desired_height && current_height != 0){ //stop automatically if the desired height is reached
             delay (500); //a short delay to compensate for sensor inaccuracy.
             stopMoving();
             Serial.println("Sitting position reached");
-            display.setSegments (P,1,0);
-            display.setSegments (empty,1,1);
-            display.setSegments (Zero,1,2);
-            display.setSegments (empty,1,3);
+            showOnDisplay (P, empty, Zero, empty);
             delay (1000);
             checkHeight();
             break;
@@ -344,15 +314,7 @@ void position_0 (){
           if(!btnUpState && debounceRead(BUTTON_UP, btnUpState)){    //Cancel if up- or down-button is pressed during automatic procedure
             stopMoving();
             Serial.println("Program Cancelled by user, BUTTON UP");
-            int digitPosition = 0;
-            while (digitPosition <  4 ){  //small cancel-animation on Display
-              delay (50);
-              display.setSegments (Minus,1,digitPosition);
-              digitPosition++;
-              if (digitPosition >= 4){
-                break;
-              }
-            };
+            animation (Minus, 50);
             break;
           }
           else if(btnUpState && !debounceRead(BUTTON_UP, btnUpState)){
@@ -362,15 +324,7 @@ void position_0 (){
           if (!btnDownState && debounceRead(BUTTON_DOWN, btnDownState)){
             stopMoving();
             Serial.println("Program Cancelled by user, BUTTON DOWN");
-            int digitPosition = 0;
-            while (digitPosition <  4 ){  //small cancel-animation on Display
-              delay (50);
-              display.setSegments (Minus,1,digitPosition);
-              digitPosition++;
-              if (digitPosition >= 4){
-                break;
-              }
-            };
+            animation (Minus, 50);
             break;
           }
           else if (btnDownState && !debounceRead(BUTTON_DOWN, btnDownState)){
@@ -399,24 +353,21 @@ void position_1 (){
    bool btnPos1State = digitalRead(BUTTON_POS_1);
    current_height = ultrasonic.read();
     if (!BUTTON_POS_1_STATE && debounceRead(BUTTON_POS_1, BUTTON_POS_1_STATE)){ //define what to do when the button is pressed 
-       Serial.println("BUTTON Position 1 Pressed");
        BUTTON_POS_1_STATE=HIGH;
+       Serial.println("BUTTON Position 1 Pressed");
        pressedTime = millis(); 
        int digitPosition = 0;
        while (btnPos1State && debounceRead(BUTTON_POS_1, BUTTON_POS_1_STATE)){  //small animation on Display while button is pressed
-         delay (500);
+         delay (400);
          display.setSegments (smallO,1,digitPosition);
          digitPosition++;
          if (digitPosition >= 4){
-          delay (500);
-          display.setSegments (Zero,1,0);
-          display.setSegments (Zero,1,1);
-          display.setSegments (Zero,1,2);
-          display.setSegments (Zero,1,3);
+          delay (400);
+          showOnDisplay (Zero, Zero, Zero, Zero);
           break;
          }
        }
-   }
+      }
    else if (BUTTON_POS_1_STATE && !debounceRead(BUTTON_POS_1, BUTTON_POS_1_STATE)){ //releasing the button checks how long it was pressed and then decides what to do
        BUTTON_POS_1_STATE=LOW;
        releasedTime = millis();   
@@ -428,21 +379,16 @@ void position_1 (){
         if (pos1SaveHeight <= pos0_height) {  //Check if Position 1 is higher than Position 0. If not, display "Err1"
           Serial.print ("must be higher than "); 
           Serial.println (pos0_height);
-          display.setSegments (Err,3,0);
-          display.setSegments (One,1,3);
+          showOnDisplay (E, R, R, One);
           delay (1000);
           display.clear();
         }
         else { // Save height and give output to user
           savedProgram.pos1Height = pos1SaveHeight;
           EEPROM.put(EEPROM_ADDRESS, savedProgram);
-          //EEPROM_ADDRESS +=sizeof (pos1SaveHeight);
           Serial.print("Saved Position 1: ");
           Serial.println(pos1SaveHeight);
-          display.setSegments (P,1,0);
-          display.setSegments (empty,1,1);
-          display.setSegments (One,1,2);
-          display.setSegments (empty,1,3);
+          showOnDisplay (P, empty, One, empty);
           delay (1000);
           display.showNumberDec(pos1SaveHeight, false); 
           delay (1000);
@@ -451,10 +397,7 @@ void position_1 (){
        }
        
        if (TimePressed < LONG_PRESS_TIME){ //If "Position 1 button" is short-pressed, check height and if possible drive to desired height
-        display.setSegments (P,1,0);
-        display.setSegments (empty,1,1);
-        display.setSegments (One,1,2);
-        display.setSegments (empty,1,3);
+        showOnDisplay (P, empty, One, empty);
         delay (100);
         int desired_height = pos1_height;
         if (current_height == 0){ //Catch Sonar-Error before starting program
@@ -462,17 +405,13 @@ void position_1 (){
         };
         while (current_height < desired_height && current_height != 0){
           checkHeight();
-          Serial.print ("current: "); Serial.println(current_height);
           Serial.print ("desired: "); Serial.println(desired_height);
           goUp();
           if (current_height >= desired_height){ //stop automatically if the desired height is reached
             delay (500); //a short delay to compensate for sensor inaccuracy.
             stopMoving();
             Serial.println("Standing position reached");
-            display.setSegments (P,1,0);
-            display.setSegments (empty,1,1);
-            display.setSegments (One,1,2);
-            display.setSegments (empty,1,3);
+            showOnDisplay (P, empty, One, empty);
             delay (1000);
             checkHeight();
             break;
@@ -485,15 +424,7 @@ void position_1 (){
           if(!btnUpState && debounceRead(BUTTON_UP, btnUpState)){    //Cancel if up- or down-button is pressed during automatic procedure
             stopMoving();
             Serial.println("Program Cancelled by user, BUTTON UP");
-            int digitPosition = 0;
-            while (digitPosition <  4 ){  //small cancel-animation on Display
-              delay (50);
-              display.setSegments (Minus,1,digitPosition);
-              digitPosition++;
-              if (digitPosition >= 4){
-                break;
-              }
-            };
+            animation (Minus, 50);
             break;
           }
           else if(btnUpState && !debounceRead(BUTTON_UP, btnUpState)){
@@ -503,15 +434,7 @@ void position_1 (){
           if (!btnDownState && debounceRead(BUTTON_DOWN, btnDownState)){
             stopMoving();
             Serial.println("Program Cancelled by user, BUTTON DOWN");
-            int digitPosition = 0;
-            while (digitPosition <  4 ){  //small cancel-animation on Display
-              delay (50);
-              display.setSegments (Minus,1,digitPosition);
-              digitPosition++;
-              if (digitPosition >= 4){
-                break;
-              }
-            };
+            animation (Minus, 50);
             break;
           }
           else if (btnDownState && !debounceRead(BUTTON_DOWN, btnDownState)){
@@ -538,8 +461,7 @@ void checkHeight() {    // Get Sensor Reading and display on 7-Segment
     old_Height = current_height;
   }
   if (current_height == 0) { //display "Err2" if the sonar sensor has an error"
-    display.setSegments (Err,3,0);
-    display.setSegments (Two,1,3);
+    showOnDisplay (E, R, R, Two);
     Serial.println("Sonar Sensor Error");
     };
   delay(100); //polling frequency of the sonar sensor. Not recommended to go below 30-50 ms
