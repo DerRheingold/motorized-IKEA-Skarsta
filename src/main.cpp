@@ -122,11 +122,6 @@ const uint8_t One[] = {
 const uint8_t Two[] = {
   SEG_A | SEG_B | SEG_G | SEG_E | SEG_D, // 2
 };
-const uint8_t Err[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F | SEG_G, // E
-  SEG_E | SEG_G, // r
-  SEG_E | SEG_G, // r
-};
 const uint8_t E[] = {
   SEG_A | SEG_D | SEG_E | SEG_F | SEG_G, // E
 };
@@ -191,7 +186,6 @@ void setup() {
   pinMode(in3, OUTPUT);
   pinMode(in4, OUTPUT);
   readFromEEPROM();
-  //current_height = ultrasonic.read();
   display.setBrightness(1);
   display.clear();
   //Some start-up-animation on Display
@@ -313,7 +307,7 @@ void position_0 (){
           }
           if(!btnUpState && debounceRead(BUTTON_UP, btnUpState)){    //Cancel if up- or down-button is pressed during automatic procedure
             stopMoving();
-            Serial.println("Program Cancelled by user, BUTTON UP");
+            Serial.println("Program cancelled by user, BUTTON UP");
             animation (Minus, 50);
             break;
           }
@@ -323,7 +317,7 @@ void position_0 (){
       
           if (!btnDownState && debounceRead(BUTTON_DOWN, btnDownState)){
             stopMoving();
-            Serial.println("Program Cancelled by user, BUTTON DOWN");
+            Serial.println("Program cancelled by user, BUTTON DOWN");
             animation (Minus, 50);
             break;
           }
@@ -352,7 +346,7 @@ void position_1 (){
    bool btnDownState = digitalRead(BUTTON_DOWN);
    bool btnPos1State = digitalRead(BUTTON_POS_1);
    current_height = ultrasonic.read();
-    if (!BUTTON_POS_1_STATE && debounceRead(BUTTON_POS_1, BUTTON_POS_1_STATE)){ //define what to do when the button is pressed 
+    if (BUTTON_POS_1_STATE==LOW && debounceRead(BUTTON_POS_1, BUTTON_POS_1_STATE)){ //define what to do when the button is pressed 
        BUTTON_POS_1_STATE=HIGH;
        Serial.println("BUTTON Position 1 Pressed");
        pressedTime = millis(); 
@@ -368,10 +362,11 @@ void position_1 (){
          }
        }
       }
-   else if (BUTTON_POS_1_STATE && !debounceRead(BUTTON_POS_1, BUTTON_POS_1_STATE)){ //releasing the button checks how long it was pressed and then decides what to do
+   else if (BUTTON_POS_1_STATE==HIGH && !debounceRead(BUTTON_POS_1, BUTTON_POS_1_STATE)){ //releasing the button checks how long it was pressed and then decides what to do
        BUTTON_POS_1_STATE=LOW;
        releasedTime = millis();   
        TimePressed = releasedTime-pressedTime;
+
        //If "Position 1 button" is long-pressed, save current height to Position 1 and display "P 1" and the height in cm in the display
        if (TimePressed >= LONG_PRESS_TIME){ 
         int pos1SaveHeight = ultrasonic.read();
@@ -423,7 +418,7 @@ void position_1 (){
           }
           if(!btnUpState && debounceRead(BUTTON_UP, btnUpState)){    //Cancel if up- or down-button is pressed during automatic procedure
             stopMoving();
-            Serial.println("Program Cancelled by user, BUTTON UP");
+            Serial.println("Program cancelled by user, BUTTON UP");
             animation (Minus, 50);
             break;
           }
@@ -433,7 +428,7 @@ void position_1 (){
       
           if (!btnDownState && debounceRead(BUTTON_DOWN, btnDownState)){
             stopMoving();
-            Serial.println("Program Cancelled by user, BUTTON DOWN");
+            Serial.println("Program cancelled by user, BUTTON DOWN");
             animation (Minus, 50);
             break;
           }
@@ -451,15 +446,18 @@ void position_1 (){
    };
 };
 
-
-void checkHeight() {    // Get Sensor Reading and display on 7-Segment
-  display.setBrightness(1);
-  current_height = ultrasonic.read();
+void showHeightIfChanged() {
   if (current_height != old_Height && current_height != 0) {  //avoid flickering of 7-segment as it now only refreshes if the value has changed
     Serial.print("current height: "); Serial.println(current_height);
     display.showNumberDec(current_height, false);
     old_Height = current_height;
   }
+}
+
+void checkHeight() {    // Get Sensor Reading and display on 7-Segment
+  display.setBrightness(1);
+  current_height = ultrasonic.read();
+  showHeightIfChanged();
   if (current_height == 0) { //display "Err2" if the sonar sensor has an error"
     showOnDisplay (E, R, R, Two);
     Serial.println("Sonar Sensor Error");
