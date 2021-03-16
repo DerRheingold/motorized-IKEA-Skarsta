@@ -234,12 +234,12 @@ void position_0 (){
    bool btnUpState = digitalRead(BUTTON_UP);
    bool btnDownState = digitalRead(BUTTON_DOWN);
    bool btnPos0State = digitalRead(BUTTON_POS_0);
+   int digitPosition = 0;
    current_height = ultrasonic.read();
    if (BUTTON_POS_0_STATE==LOW && debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){  //define what to do when the button is pressed 
        BUTTON_POS_0_STATE=HIGH;
        Serial.println("BUTTON Position 0 Pressed");
        pressedTime = millis(); 
-       int digitPosition = 0;
        while (btnPos0State && debounceRead(BUTTON_POS_0, BUTTON_POS_0_STATE)){  //small animation on Display while button is held down longer than 500 ms
          delay (400);
          display.setSegments (smallO,1,digitPosition);
@@ -345,12 +345,12 @@ void position_1 (){
    bool btnUpState = digitalRead(BUTTON_UP);
    bool btnDownState = digitalRead(BUTTON_DOWN);
    bool btnPos1State = digitalRead(BUTTON_POS_1);
+   int digitPosition = 0;
    current_height = ultrasonic.read();
     if (BUTTON_POS_1_STATE==LOW && debounceRead(BUTTON_POS_1, BUTTON_POS_1_STATE)){ //define what to do when the button is pressed 
        BUTTON_POS_1_STATE=HIGH;
        Serial.println("BUTTON Position 1 Pressed");
        pressedTime = millis(); 
-       int digitPosition = 0;
        while (btnPos1State && debounceRead(BUTTON_POS_1, BUTTON_POS_1_STATE)){  //small animation on Display while button is pressed
          delay (400);
          display.setSegments (smallO,1,digitPosition);
