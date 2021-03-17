@@ -108,6 +108,7 @@ int old_Height;
 int current_height = 0;
 int pos0_height = 0;
 int pos1_height = 0;
+int digitPosition = 0;
 
 // Some digits/figures for the display
 const uint8_t P[] = {
@@ -139,7 +140,6 @@ const uint8_t circle [] = {
   SEG_A | SEG_B | SEG_F | SEG_G  // ° 
 };
 const uint8_t empty[] = {0x0}; //blank segment for 7-Segment display
-        
 
 //This function debounces the initial button reads to prevent flickering
 bool debounceRead(int buttonPin, bool state)
