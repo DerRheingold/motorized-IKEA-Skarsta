@@ -16,7 +16,7 @@ The basic idea behind this was relatively simple: After the crank of my desk bro
 * [24v 6A AC/DC Adapter - 17€](https://www.ebay.de/itm/Netzteil-Trafo-DC12-24V-2A-10A-Netzadapter-Driver-f-LED-Strip-Streifen-Notebook/224113909308?ssPageName=STRK%3AMEBIDX%3AIT&var=522903200218&_trksid=p2060353.m2749.l2649)
 * [Sonar sensor - HC-SR04 - 3€](https://www.ebay.de/sch/i.html?_from=R40&_nkw=HC-SR04&_sacat=0&rt=nc&LH_PrefLoc=1)
 * [TM1637 7-Segment-Display with 4 digits 0,56" - 3€](https://www.ebay.de/itm/TM1637-LED-4-Ziffern-7-Segment-Display-Uhr-Arduino-Raspberry/203030439344?hash=item2f458ea5b0:g:6NsAAOSwYDhdmjKQ)
-* [2 x Motor Shaft Coupling (6mm to 6 or 7mm) - 3€/piece](https://www.ebay.de/sch/i.html?_from=R40&_nkw=Wellenkupplung+6mm&_sacat=0&rt=nc&LH_PrefLoc=1)
+* [2 x Motor Shaft Coupling (6mm to 7mm) - 3€/piece](https://www.ebay.de/sch/i.html?_from=R40&_nkw=Wellenkupplung+6mm&_sacat=0&rt=nc&LH_PrefLoc=1)
 * 4x Push Buttons
 * 8x 8mm washers
 * 4x 10k OHM Resistors
@@ -31,7 +31,7 @@ Total cost ± 140€ depending on what small parts you have at home anyway.
 Links to the shops are no ads, just to the parts I ordered and made some good experience with.
 
 ## The setup
-Cut the crank apart if you want to, or use another 6mm allen wrench that you can get to fit. Note that you'll have to do some metal-work on the 6mm allen wrench to make it fit into the motor shaft coupling
+Cut the crank apart if you want to, or use another 6mm allen wrench that you can get to fit. I recommend using a 7mm shaft coupling for easiest fit.
 
 ## The wiring
 ![Wiring for the Ikea Skarsta project](https://github.com/DerRheingold/motorized-IKEA-Skarsta/blob/main/wiring/MotorControlWithSonar.jpg)
