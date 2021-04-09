@@ -186,7 +186,7 @@ void setup() {
   pinMode(in3, OUTPUT);
   pinMode(in4, OUTPUT);
   readFromEEPROM();
-  display.setBrightness(1);
+  display.setBrightness(7);
   display.clear();
   //Some start-up-animation on Display
   animation (smallO, 100);
