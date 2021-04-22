@@ -272,7 +272,7 @@ void position_0 (){
           EEPROM.put(EEPROM_ADDRESS, savedProgram);
           Serial.print("Saved Position 0: ");
           Serial.println(pos0SaveHeight);
-          showOnDisplay (P, empty, One, empty);
+          showOnDisplay (P, empty, Zero, empty);
           delay (1000);
           display.showNumberDec(pos0SaveHeight, false);
           delay (1000);
@@ -455,7 +455,7 @@ void showHeightIfChanged() {
 }
 
 void checkHeight() {    // Get Sensor Reading and display on 7-Segment
-  display.setBrightness(1);
+  display.setBrightness(7);
   current_height = ultrasonic.read();
   showHeightIfChanged();
   if (current_height == 0) { //display "Err2" if the sonar sensor has an error"
